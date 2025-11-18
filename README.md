@@ -40,6 +40,7 @@ Then start your first session:
   commands/
     start-session.md    # /start-session command
     end-session.md      # /end-session command
+    document.md         # /document <topic> command
     archive-session.md  # /archive-session command
 ```
 
@@ -56,6 +57,12 @@ Claude reads your context and asks what you want to work on.
 /end-session
 ```
 Claude updates your context with what happened and commits the changes.
+
+### Document a Topic
+```
+/document architecture
+```
+Claude creates topic-specific documentation in `.sessions/docs/`. Use this for architectural decisions, API patterns, testing strategies, or other deep context.
 
 ### Archive Completed Work
 ```

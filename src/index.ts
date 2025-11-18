@@ -113,6 +113,10 @@ function createSessionsDirectory() {
   const archiveSessionContent = getTemplateContent('claude/commands/archive-session.md');
   writeFileSync('.claude/commands/archive-session.md', archiveSessionContent);
   log('✓ Created .claude/commands/archive-session.md', colors.green);
+
+  const documentContent = getTemplateContent('claude/commands/document.md');
+  writeFileSync('.claude/commands/document.md', documentContent);
+  log('✓ Created .claude/commands/document.md', colors.green);
 }
 
 function main() {

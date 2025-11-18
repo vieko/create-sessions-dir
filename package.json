@@ -4,7 +4,7 @@
   "description": "Scaffold a Sessions Directory for working with AI coding agents",
   "type": "module",
   "bin": {
-    "create-sessions-dir": "./dist/index.js"
+    "create-sessions-dir": "dist/index.js"
   },
   "files": [
     "dist",
@@ -28,7 +28,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/vieko/create-sessions-dir.git"
+    "url": "git+https://github.com/vieko/create-sessions-dir.git"
   },
   "bugs": {
     "url": "https://github.com/vieko/create-sessions-dir/issues"

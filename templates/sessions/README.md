@@ -72,7 +72,7 @@ Or prompt Claude directly:
 
 ## Slash Commands
 
-This setup includes three slash commands for Claude Code:
+This setup includes four slash commands for Claude Code:
 
 ### `/start-session`
 Reads your session context and gets you oriented. Claude will:
@@ -86,6 +86,15 @@ Updates your session context with what happened. Claude will:
 - Record decisions and blockers
 - Set next session priorities
 - Commit the changes
+
+### `/document <topic>`
+Creates topic-specific documentation as your project grows. Claude will:
+- Create `.sessions/docs/` folder (first time only)
+- Create or update `.sessions/docs/<topic>.md`
+- Ask what should be documented
+- Structure it with clear headings and context
+
+**Use this when:** You have architectural decisions, API patterns, testing strategies, or other deep context worth its own document.
 
 ### `/archive-session`
 Archives completed work to keep your context file clean. Claude will:
