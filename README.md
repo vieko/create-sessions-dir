@@ -86,6 +86,10 @@ AI coding agents are stateless - they don't remember previous sessions. The Sess
 
 Read the full story: [vieko.dev/sessions](https://vieko.dev/sessions)
 
+## Acknowledgments
+
+Thanks to [Aman Azad](https://github.com/namadaza) for the nudge to turn the pattern into a tool.
+
 ## License
 
 MIT © [Vieko Franetovic](https://vieko.dev)
