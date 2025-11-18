@@ -1,0 +1,45 @@
+{
+  "name": "create-sessions-dir",
+  "version": "0.1.0",
+  "description": "Scaffold a Sessions Directory for working with AI coding agents",
+  "type": "module",
+  "bin": {
+    "create-sessions-dir": "./dist/index.js"
+  },
+  "files": [
+    "dist",
+    "templates"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "ai",
+    "claude",
+    "sessions",
+    "documentation",
+    "workflow",
+    "agent",
+    "scaffold"
+  ],
+  "author": "Vieko Franetovic <hello@vieko.dev>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vieko/create-sessions-dir.git"
+  },
+  "bugs": {
+    "url": "https://github.com/vieko/create-sessions-dir/issues"
+  },
+  "homepage": "https://github.com/vieko/create-sessions-dir#readme",
+  "dependencies": {
+    "prompts": "^2.4.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/prompts": "^2.4.9",
+    "typescript": "^5.7.2"
+  }
+}
