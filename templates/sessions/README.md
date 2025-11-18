@@ -30,6 +30,8 @@ As you work, document important decisions, architecture choices, and progress:
 
 ### 3. End the Session
 
+**End frequently** (every 20-30 minutes is fine). Think of it like saving your game - save often!
+
 Use the slash command:
 ```
 /end-session
@@ -142,15 +144,17 @@ Clean up .sessions/index.md by removing completed items.
 
 ## Tips
 
-1. **Update frequently** - Don't wait until the end. Document decisions as you make them.
+1. **End sessions frequently** - Sessions can be 20-30 minutes. Think of `/end-session` like saving your game - save often. It's better to end and start fresh than to keep a session open all day.
 
-2. **Be specific** - "Fixed auth bug" is less useful than "Fixed token refresh race condition in AuthProvider"
+2. **Update as you go** - Don't wait until the end. Document decisions as you make them.
 
-3. **Track blockers** - Note what's blocking progress so the next session can pick up smoothly
+3. **Be specific** - "Fixed auth bug" is less useful than "Fixed token refresh race condition in AuthProvider"
 
-4. **Commit often** - Each session should have at least one commit updating `.sessions/index.md`
+4. **Track blockers** - Note what's blocking progress so the next session can pick up smoothly
 
-5. **Archive completed work** - Once a feature is done, move detailed notes to `.sessions/archive/` to keep your index file scannable
+5. **Commit often** - Each session should have at least one commit updating `.sessions/index.md`
+
+6. **Archive completed work** - Once a feature is done, move detailed notes to `.sessions/archive/` to keep your index file scannable
 
 ---
 
