@@ -26,6 +26,93 @@ function checkExistingSessions(): boolean {
   return existsSync('.sessions');
 }
 
+function detectVersion(): string | null {
+  // Try to detect version from existing setup
+  if (!existsSync('.sessions')) return null;
+
+  // v0.1.x-0.2.x: Has .sessions but no plans/ or prep/
+  const hasPlans = existsSync('.sessions/plans');
+  const hasPrep = existsSync('.sessions/prep');
+  const hasScripts = existsSync('.claude/scripts');
+
+  if (!hasPlans && !hasPrep && !hasScripts) {
+    return 'v0.1-0.2'; // Old version
+  }
+
+  return 'v0.3+'; // Current or newer
+}
+
+function updateExistingSetup() {
+  log('\n📦 Updating existing Sessions Directory...', colors.cyan);
+
+  const version = detectVersion();
+
+  if (version === 'v0.3+') {
+    log('✓ Already on latest version', colors.green);
+    return;
+  }
+
+  // Create new directories (safe - won't overwrite)
+  if (!existsSync('.sessions/plans')) {
+    mkdirSync('.sessions/plans', { recursive: true });
+    log('✓ Created .sessions/plans/', colors.green);
+  }
+
+  if (!existsSync('.sessions/prep')) {
+    mkdirSync('.sessions/prep', { recursive: true });
+    log('✓ Created .sessions/prep/', colors.green);
+  }
+
+  if (!existsSync('.claude/scripts')) {
+    mkdirSync('.claude/scripts', { recursive: true });
+    log('✓ Created .claude/scripts/', colors.green);
+  }
+
+  // Create .gitignore if missing
+  if (!existsSync('.sessions/.gitignore')) {
+    const gitignoreContent = getTemplateContent('sessions/.gitignore');
+    writeFileSync('.sessions/.gitignore', gitignoreContent);
+    log('✓ Created .sessions/.gitignore', colors.green);
+  }
+
+  // Update or create commands
+  const commands = ['start-session', 'end-session', 'document', 'archive-session'];
+  for (const cmd of commands) {
+    const content = getTemplateContent(`claude/commands/${cmd}.md`);
+    writeFileSync(`.claude/commands/${cmd}.md`, content);
+    log(`✓ Updated .claude/commands/${cmd}.md`, colors.green);
+  }
+
+  // Create new plan command
+  if (!existsSync('.claude/commands/plan.md')) {
+    const planContent = getTemplateContent('claude/commands/plan.md');
+    writeFileSync('.claude/commands/plan.md', planContent);
+    log('✓ Created .claude/commands/plan.md', colors.green);
+  }
+
+  // Create script
+  if (!existsSync('.claude/scripts/should-archive.sh')) {
+    const shouldArchiveScript = getTemplateContent('claude/scripts/should-archive.sh');
+    writeFileSync('.claude/scripts/should-archive.sh', shouldArchiveScript);
+    chmodSync('.claude/scripts/should-archive.sh', 0o755);
+    log('✓ Created .claude/scripts/should-archive.sh', colors.green);
+  }
+
+  // Check for monorepo and add workspace support if needed
+  const monorepo = detectMonorepo();
+  if (monorepo.isMonorepo && !existsSync('.sessions/WORKSPACE.md')) {
+    mkdirSync('.sessions/packages', { recursive: true });
+    log('✓ Detected monorepo - created .sessions/packages/', colors.cyan);
+
+    const workspaceContent = getTemplateContent('sessions/WORKSPACE.md')
+      .replace('{{PACKAGES}}', monorepo.packages.map(p => `- ${p}`).join('\n'));
+    writeFileSync('.sessions/WORKSPACE.md', workspaceContent);
+    log('✓ Created .sessions/WORKSPACE.md', colors.green);
+  }
+
+  log('\n✓ Update complete! Your existing work is preserved.', colors.green + colors.bright);
+}
+
 function checkClaudeCLI(): boolean {
   try {
     execSync('which claude', { stdio: 'ignore' });
@@ -100,7 +187,7 @@ function detectMonorepo(): MonorepoInfo {
     }
   }
 
-  // Check for npm/yarn workspaces
+  // Check for npm/yarn/bun workspaces (also used by Turborepo)
   if (existsSync('package.json')) {
     try {
       const pkg = JSON.parse(readFileSync('package.json', 'utf-8'));
@@ -124,6 +211,14 @@ function detectMonorepo(): MonorepoInfo {
     } catch {
       // Fall through
     }
+  }
+
+  // Check for Turborepo (fallback if no workspace config found yet)
+  // Turborepo uses underlying workspace configs, so this is a hint to check deeper
+  if (existsSync('turbo.json') || existsSync('turbo.jsonc')) {
+    // Turborepo detected but no workspace config - might be misconfigured or minimal setup
+    // Default to common patterns
+    return { isMonorepo: true, root: process.cwd(), packages: ['apps/*', 'packages/*'] };
   }
 
   return { isMonorepo: false, root: process.cwd(), packages: [] };
@@ -212,12 +307,45 @@ function main() {
 
   // Check for existing .sessions directory
   if (checkExistingSessions()) {
-    log('⚠️  .sessions/ directory already exists!', colors.yellow);
-    log('   Aborting to avoid overwriting existing files.\n', colors.yellow);
-    process.exit(1);
+    const version = detectVersion();
+    if (version === 'v0.3+') {
+      log('✓ Sessions Directory already exists and is up to date', colors.green);
+      log('   No updates needed.\n', colors.cyan);
+      process.exit(0);
+    } else {
+      log('📦 Existing Sessions Directory detected (older version)', colors.cyan);
+      log('   Updating to v0.3.0 with new features...\n', colors.cyan);
+      updateExistingSetup();
+
+      // Check for Claude CLI
+      const hasClaudeCLI = checkClaudeCLI();
+
+      log('\n' + '─'.repeat(50), colors.blue);
+      log('\n🎉 Update complete!\n', colors.green + colors.bright);
+
+      log('What\'s new in v0.3.0:', colors.bright);
+      log('  • Smart PR detection and archiving (.claude/scripts/should-archive.sh)');
+      log('  • GitHub/Linear issue integration (/start-session)');
+      log('  • Implementation planning (/plan)');
+      log('  • Enhanced documentation with sub-agents (/document)');
+      log('  • Monorepo support (auto-detected)');
+      log('  • New directories: plans/, prep/\n');
+
+      if (!hasClaudeCLI) {
+        log('⚠️  Claude CLI not detected', colors.yellow);
+        log('   Install it to use slash commands:', colors.yellow);
+        log('   npm install -g @anthropic-ai/claude-code\n', colors.cyan);
+      }
+
+      log('Next steps:', colors.bright);
+      log('  1. Check updated commands in .claude/commands/');
+      log('  2. Try /plan to create an implementation plan');
+      log('  3. Learn more: https://vieko.dev/sessions\n');
+      return;
+    }
   }
 
-  // Create the structure
+  // Create the structure (fresh install)
   createSessionsDirectory();
 
   // Check for Claude CLI
