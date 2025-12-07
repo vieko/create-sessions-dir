@@ -1,16 +1,32 @@
+---
+description: Create topic-specific documentation
+---
+
 Create or update documentation for a specific topic in .sessions/docs/
 
 The user will provide a topic name (e.g., "authentication", "api-design", "testing-strategy").
 
 Steps:
 1. If .sessions/docs/ doesn't exist, create it first
-2. Create or update .sessions/docs/<topic>.md
-3. Ask me what should be documented about this topic
-4. Structure the documentation with:
+2. Ask: "What should be documented about [topic]?"
+3. Launch an Explore agent with:
+   "Thoroughly explore the codebase to understand [topic].
+
+   Focus on:
+   - Architecture and patterns
+   - Key implementation details
+   - Important decisions and trade-offs
+   - Critical files and code locations
+
+   Return a structured summary suitable for documentation."
+
+4. Use the agent's findings to create .sessions/docs/<topic>.md with:
    - Overview of the topic
    - Current decisions and rationale
    - Implementation details or patterns
+   - Key files and code references (use file:line format)
    - Open questions or considerations
-   - Links to relevant code or resources
 
-Keep the documentation scannable and focused. Use clear headings and bullet points.
+5. Add reference to this doc in index.md under relevant section
+
+Keep documentation scannable with clear headings and bullet points.

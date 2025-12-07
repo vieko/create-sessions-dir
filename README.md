@@ -34,14 +34,21 @@ Then start your first session:
 .sessions/
   index.md          # Your living context document
   archive/          # For completed work
+  plans/            # Implementation plans
+  prep/             # Pre-session context
   README.md         # Workflow guide and examples
+  .gitignore        # Ignores data/, scratch/ directories
+  WORKSPACE.md      # Monorepo guide (if detected)
 
 .claude/
   commands/
     start-session.md    # /start-session command
     end-session.md      # /end-session command
     document.md         # /document <topic> command
+    plan.md             # /plan command
     archive-session.md  # /archive-session command
+  scripts/
+    should-archive.sh   # PR detection for smart archiving
 ```
 
 ## Usage
@@ -50,19 +57,25 @@ Then start your first session:
 ```
 /start-session
 ```
-Claude reads your context and asks what you want to work on.
+Claude reads your context and asks what you want to work on. You can provide a GitHub/Linear URL and Claude will fetch details automatically.
 
 ### End a Session
 ```
 /end-session
 ```
-Claude updates your context with what happened and commits the changes.
+Claude updates your context with what happened. If you referenced PRs (like #123) and they're merged, Claude will offer to archive automatically. Then commits the changes.
+
+### Plan Implementation
+```
+/plan
+```
+Claude launches a planning agent to design your implementation, creating a structured plan in `.sessions/plans/`.
 
 ### Document a Topic
 ```
 /document architecture
 ```
-Claude creates topic-specific documentation in `.sessions/docs/`. Use this for architectural decisions, API patterns, testing strategies, or other deep context.
+Claude launches an exploration agent to understand the topic, then creates documentation in `.sessions/docs/`.
 
 ### Archive Completed Work
 ```

@@ -167,14 +167,34 @@ Clean up .sessions/index.md by removing completed items.
 
 ---
 
+## Optional Directories
+
+The Sessions Directory supports extensions:
+
+- `docs/` - Topic-specific documentation (use `/document`)
+- `plans/` - Implementation plans (use `/plan`)
+- `prep/` - Pre-session context gathering (created by `/start-session`)
+- `archive/` - Completed work (use `/end-session` auto-detect)
+- `data/` - Sample/test data for tasks (git-ignored)
+- `scratch/` - Temporary experiments (git-ignored)
+
+A `.gitignore` is included to exclude temporary directories.
+
 ## Customizing
 
 This structure is a starting point. Adapt it to your needs:
 
-- Add topic-specific docs (`.sessions/architecture.md`, `.sessions/api-decisions.md`)
+- Add more topic-specific docs in `.sessions/docs/`
 - Create templates for recurring documentation
 - Structure the archive however makes sense for your project
 - Modify slash commands in `.claude/commands/` to match your workflow
+
+## Monorepo Support
+
+If you're in a monorepo, check for `.sessions/WORKSPACE.md` which provides guidance on:
+- Shared sessions at the root level
+- Package-specific notes in `.sessions/packages/`
+- Cross-package work tracking
 
 ---
 
