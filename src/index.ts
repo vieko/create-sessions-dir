@@ -136,14 +136,35 @@ Get token: Linear Settings → Security & Access → Personal API keys
 Commands will gracefully handle missing tools and prompt for manual input.
 `;
 
-  if (isNew) {
-    // Create new CLAUDE.md
-    const content = `# CLAUDE.md
+  const templateContent = `# CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Project Overview
+
+**WHY**: [Brief 1-2 sentence project purpose]
+
+**WHAT**:
+- Tech stack: [e.g., TypeScript, React, Node.js]
+- Architecture: [e.g., monorepo, microservices, CLI tool]
+
+**HOW**:
+\`\`\`bash
+# Build
+npm run build
+
+# Test
+npm test
+
+# Development
+npm run dev
+\`\`\`
 ${sessionsSection}`;
-    writeFileSync('CLAUDE.md', content);
-    log('✓ Created CLAUDE.md with Sessions Pattern documentation', colors.green);
+
+  if (isNew) {
+    // Create new CLAUDE.md with template
+    writeFileSync('CLAUDE.md', templateContent);
+    log('✓ Created CLAUDE.md with WHY/WHAT/HOW template', colors.green);
   } else {
     // Append to existing CLAUDE.md
     const existing = readFileSync('CLAUDE.md', 'utf-8');

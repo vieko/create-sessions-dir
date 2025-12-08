@@ -151,6 +151,23 @@ Clean up .sessions/index.md by removing completed items.
 
 ---
 
+## Writing Effective Context
+
+**Keep it concise**: Target <300 lines for your session index. If notes grow beyond this, archive completed work or move detailed topics to `.sessions/docs/`.
+
+**Use file references**: Link to code with `file:line` format (e.g., `src/auth.ts:42`) instead of copying code snippets. This prevents outdated duplication.
+
+**Separate facts from rules**: Session notes should contain *context* (what was built, decisions made, current state) not *instructions* (code style rules, best practices). Use linters and formatters for code style instead of writing rules.
+
+**Focus on the "why"**: Document *why* decisions were made, not just *what* was done. "Switched to JWT because session storage caused issues in mobile Safari" beats "Added JWT auth".
+
+**Avoid behavioral hotfixes**: Don't add one-off instructions to work around Claude's behavior. If something needs fixing, address the root cause or use deterministic tools (scripts, hooks, linters).
+
+**Progressive disclosure**: Keep `index.md` high-level and scannable. Move deep technical details to topic-specific files in `.sessions/docs/`:
+- Architecture decisions: `docs/architecture.md`
+- API patterns: `docs/api-design.md`
+- Testing strategies: `docs/testing.md`
+
 ## Tips
 
 1. **End sessions frequently** - Sessions can be 20-30 minutes. Think of `/end-session` like saving your game - save often. It's better to end and start fresh than to keep a session open all day.
