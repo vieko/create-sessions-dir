@@ -5,7 +5,7 @@ description: Start a new session
 
 Read .sessions/index.md and report when ready.
 
-If .sessions/WORKSPACE.md exists, mention that monorepo support is active.
+Check if .sessions/WORKSPACE.md exists (don't error if missing). If it exists, mention that monorepo support is active and show detected packages.
 
 Summarize:
 - Current state
