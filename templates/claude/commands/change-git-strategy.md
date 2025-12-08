@@ -1,4 +1,5 @@
 ---
+allowed-tools: Bash(git:*), Bash(.claude/scripts/*:*)
 description: Change how .sessions/ is handled in git
 ---
 

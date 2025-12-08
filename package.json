@@ -1,6 +1,6 @@
 {
   "name": "create-sessions-dir",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "Scaffold a Sessions Directory for working with AI coding agents",
   "type": "module",
   "bin": {

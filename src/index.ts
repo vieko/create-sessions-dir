@@ -199,38 +199,41 @@ function updateExistingSetup() {
 
   const version = detectVersion();
 
-  if (version === 'v0.3+') {
-    log('✓ Already on latest version', colors.green);
-    return;
-  }
+  // Always update commands (they're templates, safe to overwrite)
+  // Only skip directory creation if already on v0.3+
+  const skipDirectoryCreation = version === 'v0.3+';
 
   // Create new directories (safe - won't overwrite)
-  if (!existsSync('.sessions/plans')) {
-    mkdirSync('.sessions/plans', { recursive: true });
-    log('✓ Created .sessions/plans/', colors.green);
-  }
+  if (!skipDirectoryCreation) {
+    if (!existsSync('.sessions/plans')) {
+      mkdirSync('.sessions/plans', { recursive: true });
+      log('✓ Created .sessions/plans/', colors.green);
+    }
 
-  if (!existsSync('.sessions/prep')) {
-    mkdirSync('.sessions/prep', { recursive: true });
-    log('✓ Created .sessions/prep/', colors.green);
-  }
+    if (!existsSync('.sessions/prep')) {
+      mkdirSync('.sessions/prep', { recursive: true });
+      log('✓ Created .sessions/prep/', colors.green);
+    }
 
-  if (!existsSync('.claude/scripts')) {
-    mkdirSync('.claude/scripts', { recursive: true });
-    log('✓ Created .claude/scripts/', colors.green);
+    if (!existsSync('.claude/scripts')) {
+      mkdirSync('.claude/scripts', { recursive: true });
+      log('✓ Created .claude/scripts/', colors.green);
+    }
   }
 
   // Update .gitignore to ignore if it only has basic content
-  if (existsSync('.sessions/.gitignore')) {
-    const existing = readFileSync('.sessions/.gitignore', 'utf-8');
-    // If it's the old basic version, update to ignore (safest for updates)
-    if (existing.includes('data/') && existing.includes('scratch/') && existing.split('\n').length < 10) {
+  if (!skipDirectoryCreation) {
+    if (existsSync('.sessions/.gitignore')) {
+      const existing = readFileSync('.sessions/.gitignore', 'utf-8');
+      // If it's the old basic version, update to ignore (safest for updates)
+      if (existing.includes('data/') && existing.includes('scratch/') && existing.split('\n').length < 10) {
+        createGitignore('ignore');
+        log('✓ Updated .sessions/.gitignore to ignore strategy', colors.cyan);
+      }
+    } else {
+      // No gitignore exists, create ignore (safest for updates - prevents accidental commits)
       createGitignore('ignore');
-      log('✓ Updated .sessions/.gitignore to ignore strategy', colors.cyan);
     }
-  } else {
-    // No gitignore exists, create ignore (safest for updates - prevents accidental commits)
-    createGitignore('ignore');
   }
 
   // Update or create commands
@@ -252,33 +255,39 @@ function updateExistingSetup() {
   }
 
   // Create scripts
-  if (!existsSync('.claude/scripts/should-archive.sh')) {
-    const shouldArchiveScript = getTemplateContent('claude/scripts/should-archive.sh');
-    writeFileSync('.claude/scripts/should-archive.sh', shouldArchiveScript);
-    chmodSync('.claude/scripts/should-archive.sh', 0o755);
-    log('✓ Created .claude/scripts/should-archive.sh', colors.green);
-  }
+  if (!skipDirectoryCreation) {
+    if (!existsSync('.claude/scripts/should-archive.sh')) {
+      const shouldArchiveScript = getTemplateContent('claude/scripts/should-archive.sh');
+      writeFileSync('.claude/scripts/should-archive.sh', shouldArchiveScript);
+      chmodSync('.claude/scripts/should-archive.sh', 0o755);
+      log('✓ Created .claude/scripts/should-archive.sh', colors.green);
+    }
 
-  if (!existsSync('.claude/scripts/untrack-sessions.sh')) {
-    const untrackScript = getTemplateContent('claude/scripts/untrack-sessions.sh');
-    writeFileSync('.claude/scripts/untrack-sessions.sh', untrackScript);
-    chmodSync('.claude/scripts/untrack-sessions.sh', 0o755);
-    log('✓ Created .claude/scripts/untrack-sessions.sh', colors.green);
-  }
+    if (!existsSync('.claude/scripts/untrack-sessions.sh')) {
+      const untrackScript = getTemplateContent('claude/scripts/untrack-sessions.sh');
+      writeFileSync('.claude/scripts/untrack-sessions.sh', untrackScript);
+      chmodSync('.claude/scripts/untrack-sessions.sh', 0o755);
+      log('✓ Created .claude/scripts/untrack-sessions.sh', colors.green);
+    }
 
-  // Check for monorepo and add workspace support if needed
-  const monorepo = detectMonorepo();
-  if (monorepo.isMonorepo && !existsSync('.sessions/WORKSPACE.md')) {
-    mkdirSync('.sessions/packages', { recursive: true });
-    log('✓ Detected monorepo - created .sessions/packages/', colors.cyan);
+    // Check for monorepo and add workspace support if needed
+    const monorepo = detectMonorepo();
+    if (monorepo.isMonorepo && !existsSync('.sessions/WORKSPACE.md')) {
+      mkdirSync('.sessions/packages', { recursive: true });
+      log('✓ Detected monorepo - created .sessions/packages/', colors.cyan);
 
-    const workspaceContent = getTemplateContent('sessions/WORKSPACE.md')
-      .replace('{{PACKAGES}}', monorepo.packages.map(p => `- ${p}`).join('\n'));
-    writeFileSync('.sessions/WORKSPACE.md', workspaceContent);
-    log('✓ Created .sessions/WORKSPACE.md', colors.green);
+      const workspaceContent = getTemplateContent('sessions/WORKSPACE.md')
+        .replace('{{PACKAGES}}', monorepo.packages.map(p => `- ${p}`).join('\n'));
+      writeFileSync('.sessions/WORKSPACE.md', workspaceContent);
+      log('✓ Created .sessions/WORKSPACE.md', colors.green);
+    }
   }
 
   log('\n✓ Update complete! Your existing work is preserved.', colors.green + colors.bright);
+
+  if (skipDirectoryCreation) {
+    log('   Commands updated to latest templates.', colors.cyan);
+  }
 }
 
 function checkClaudeCLI(): boolean {
@@ -482,21 +491,25 @@ async function main() {
   // Check for existing .sessions directory
   if (checkExistingSessions()) {
     const version = detectVersion();
-    if (version === 'v0.3+') {
-      log('✓ Sessions Directory already exists and is up to date', colors.green);
-      log('   No updates needed.\n', colors.cyan);
-      process.exit(0);
-    } else {
+    const isOlderVersion = version !== 'v0.3+';
+
+    if (isOlderVersion) {
       log('📦 Existing Sessions Directory detected (older version)', colors.cyan);
       log('   Updating to v0.3.0 with new features...\n', colors.cyan);
-      updateExistingSetup();
+    } else {
+      log('📦 Existing Sessions Directory detected (v0.3+)', colors.cyan);
+      log('   Updating commands to latest templates...\n', colors.cyan);
+    }
 
-      // Check for Claude CLI
-      const hasClaudeCLI = checkClaudeCLI();
+    updateExistingSetup();
 
-      log('\n' + '─'.repeat(50), colors.blue);
-      log('\n🎉 Update complete!\n', colors.green + colors.bright);
+    // Check for Claude CLI
+    const hasClaudeCLI = checkClaudeCLI();
 
+    log('\n' + '─'.repeat(50), colors.blue);
+    log('\n🎉 Update complete!\n', colors.green + colors.bright);
+
+    if (isOlderVersion) {
       log('What\'s new in v0.3.0:', colors.bright);
       log('  • Smart PR detection and archiving (.claude/scripts/should-archive.sh)');
       log('  • GitHub/Linear issue integration (/start-session)');
@@ -504,19 +517,19 @@ async function main() {
       log('  • Enhanced documentation with sub-agents (/document)');
       log('  • Monorepo support (auto-detected)');
       log('  • New directories: plans/, prep/\n');
-
-      if (!hasClaudeCLI) {
-        log('⚠️  Claude CLI not detected', colors.yellow);
-        log('   Install it to use slash commands:', colors.yellow);
-        log('   npm install -g @anthropic-ai/claude-code\n', colors.cyan);
-      }
-
-      log('Next steps:', colors.bright);
-      log('  1. Check updated commands in .claude/commands/');
-      log('  2. Try /plan to create an implementation plan');
-      log('  3. Learn more: https://vieko.dev/sessions\n');
-      return;
     }
+
+    if (!hasClaudeCLI) {
+      log('⚠️  Claude CLI not detected', colors.yellow);
+      log('   Install it to use slash commands:', colors.yellow);
+      log('   npm install -g @anthropic-ai/claude-code\n', colors.cyan);
+    }
+
+    log('Next steps:', colors.bright);
+    log('  1. Check updated commands in .claude/commands/');
+    log('  2. Try /plan to create an implementation plan');
+    log('  3. Learn more: https://vieko.dev/sessions\n');
+    return;
   }
 
   // Create the structure (fresh install)
