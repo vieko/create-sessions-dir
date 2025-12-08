@@ -1,0 +1,5 @@
+# Temporary and local data
+data/
+scratch/
+*.tmp
+*.local

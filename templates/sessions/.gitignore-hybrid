@@ -1,0 +1,18 @@
+# Personal working notes (not committed)
+index.md
+archive/
+prep/
+
+# Temporary data
+data/
+scratch/
+*.tmp
+*.local
+
+# Team documentation (committed)
+!docs/
+!plans/
+!packages/
+!README.md
+!WORKSPACE.md
+!.gitignore

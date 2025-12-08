@@ -4,6 +4,7 @@ import { existsSync, mkdirSync, writeFileSync, readFileSync, chmodSync } from 'f
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { execSync } from 'child_process';
+import prompts from 'prompts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -42,6 +43,54 @@ function detectVersion(): string | null {
   return 'v0.3+'; // Current or newer
 }
 
+async function promptGitStrategy(): Promise<string> {
+  const response = await prompts({
+    type: 'select',
+    name: 'strategy',
+    message: 'How should .sessions/ be handled in git?',
+    choices: [
+      {
+        title: 'Hybrid (recommended)',
+        value: 'hybrid',
+        description: 'Commit docs/plans, keep working notes private'
+      },
+      {
+        title: 'Commit all',
+        value: 'commit',
+        description: 'Share session notes with team, preserve history'
+      },
+      {
+        title: 'Ignore all',
+        value: 'ignore',
+        description: 'Keep sessions completely local'
+      }
+    ],
+    initial: 0
+  });
+
+  return response.strategy || 'hybrid';
+}
+
+function createGitignore(strategy: string) {
+  const templateMap: Record<string, string> = {
+    commit: 'sessions/.gitignore-commit',
+    ignore: 'sessions/.gitignore-ignore',
+    hybrid: 'sessions/.gitignore-hybrid'
+  };
+
+  const template = templateMap[strategy] || templateMap.hybrid;
+  const gitignoreContent = getTemplateContent(template);
+  writeFileSync('.sessions/.gitignore', gitignoreContent);
+
+  const strategyLabels: Record<string, string> = {
+    commit: 'commit strategy (team-shared)',
+    ignore: 'ignore strategy (personal)',
+    hybrid: 'hybrid strategy (docs committed, notes private)'
+  };
+
+  log(`✓ Created .sessions/.gitignore (${strategyLabels[strategy]})`, colors.green);
+}
+
 function updateExistingSetup() {
   log('\n📦 Updating existing Sessions Directory...', colors.cyan);
 
@@ -68,11 +117,17 @@ function updateExistingSetup() {
     log('✓ Created .claude/scripts/', colors.green);
   }
 
-  // Create .gitignore if missing
-  if (!existsSync('.sessions/.gitignore')) {
-    const gitignoreContent = getTemplateContent('sessions/.gitignore');
-    writeFileSync('.sessions/.gitignore', gitignoreContent);
-    log('✓ Created .sessions/.gitignore', colors.green);
+  // Update .gitignore to hybrid if it only has basic content
+  if (existsSync('.sessions/.gitignore')) {
+    const existing = readFileSync('.sessions/.gitignore', 'utf-8');
+    // If it's the old basic version, update to hybrid
+    if (existing.includes('data/') && existing.includes('scratch/') && existing.split('\n').length < 10) {
+      createGitignore('hybrid');
+      log('✓ Updated .sessions/.gitignore to hybrid strategy', colors.cyan);
+    }
+  } else {
+    // No gitignore exists, create hybrid (safest for updates)
+    createGitignore('hybrid');
   }
 
   // Update or create commands
@@ -268,10 +323,7 @@ function createSessionsDirectory() {
   writeFileSync('.sessions/README.md', readmeContent);
   log('✓ Created .sessions/README.md', colors.green);
 
-  // Create .gitignore
-  const gitignoreContent = getTemplateContent('sessions/.gitignore');
-  writeFileSync('.sessions/.gitignore', gitignoreContent);
-  log('✓ Created .sessions/.gitignore', colors.green);
+  // Git strategy will be set in main() after user prompt
 
   // Create slash commands
   const startSessionContent = getTemplateContent('claude/commands/start-session.md');
@@ -301,7 +353,7 @@ function createSessionsDirectory() {
   log('✓ Created .claude/scripts/should-archive.sh', colors.green);
 }
 
-function main() {
+async function main() {
   log('\n✨ create-sessions-dir', colors.cyan + colors.bright);
   log('   Setting up Sessions Directory Pattern\n', colors.cyan);
 
@@ -347,6 +399,11 @@ function main() {
 
   // Create the structure (fresh install)
   createSessionsDirectory();
+
+  // Prompt for git strategy
+  log('');
+  const gitStrategy = await promptGitStrategy();
+  createGitignore(gitStrategy);
 
   // Check for Claude CLI
   const hasClaudeCLI = checkClaudeCLI();
