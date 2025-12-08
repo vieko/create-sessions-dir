@@ -21,7 +21,9 @@ npx create-sessions-dir
 This creates:
 - `.sessions/` directory with context files
 - `.claude/commands/` with slash commands for Claude Code
+- `.claude/scripts/` with helper scripts
 - Templates and workflow guide
+- Optionally creates or updates CLAUDE.md to document the pattern
 
 Then start your first session:
 ```bash
@@ -103,6 +105,20 @@ npx create-sessions-dir
 ```
 
 It will detect your existing setup and update it to v0.3.0 **without touching your work**. All your session notes, archive, and docs are preserved. Only the commands and structure are updated.
+
+## Interactive Setup
+
+During installation, you'll be prompted for:
+
+1. **Git strategy** - How .sessions/ should be handled in git
+   - **Ignore all** (default) - Keep sessions completely local
+   - **Hybrid** - Commit docs/plans, keep notes private
+   - **Commit all** - Share everything with team
+
+2. **CLAUDE.md documentation** - Document the pattern for your team
+   - Creates new CLAUDE.md if none exists
+   - Appends to existing CLAUDE.md if detected
+   - Skips if Sessions Pattern already documented
 
 ## Why This Works
 

@@ -73,6 +73,86 @@ async function promptGitStrategy(): Promise<string> {
   return response.strategy || 'ignore';
 }
 
+async function promptClaudeMdUpdate(): Promise<boolean> {
+  // Check if CLAUDE.md exists
+  if (!existsSync('CLAUDE.md')) {
+    const response = await prompts({
+      type: 'confirm',
+      name: 'create',
+      message: 'Create CLAUDE.md to document Sessions Pattern for your team?',
+      initial: true
+    });
+    return response.create ?? false;
+  }
+
+  // CLAUDE.md exists - check if Sessions Pattern already documented
+  const existing = readFileSync('CLAUDE.md', 'utf-8');
+  if (existing.includes('Sessions Pattern') || existing.includes('.sessions/')) {
+    log('✓ CLAUDE.md already mentions Sessions Pattern', colors.green);
+    return false;
+  }
+
+  // Ask to append
+  const response = await prompts({
+    type: 'confirm',
+    name: 'append',
+    message: 'Add Sessions Pattern documentation to existing CLAUDE.md?',
+    initial: true
+  });
+
+  return response.append ?? false;
+}
+
+function createOrUpdateClaudeMd(isNew: boolean) {
+  const sessionsSection = `
+## Sessions Pattern (Optional)
+
+If you've set up the Sessions Directory Pattern (\`npx create-sessions-dir\`):
+
+- \`/start-session\` - Read context, fetch GitHub/Linear issues
+- \`/end-session\` - Update context, detect merged PRs, auto-archive
+- \`/plan\` - Create structured implementation plans
+- \`/document\` - Topic-specific documentation with sub-agents
+- \`/change-git-strategy\` - Change git strategy for .sessions/
+
+Learn more: https://vieko.dev/sessions
+
+## External Tools (Optional)
+
+**For GitHub integration:**
+\`\`\`bash
+gh auth login    # Required for PR/issue fetching
+\`\`\`
+
+**For Linear integration:**
+\`\`\`bash
+npm install -g linearis
+echo "your-api-token" > ~/.linear_api_token
+# Or: export LINEAR_API_TOKEN=your-token
+\`\`\`
+
+Get token: Linear Settings → Security & Access → Personal API keys
+
+Commands will gracefully handle missing tools and prompt for manual input.
+`;
+
+  if (isNew) {
+    // Create new CLAUDE.md
+    const content = `# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+${sessionsSection}`;
+    writeFileSync('CLAUDE.md', content);
+    log('✓ Created CLAUDE.md with Sessions Pattern documentation', colors.green);
+  } else {
+    // Append to existing CLAUDE.md
+    const existing = readFileSync('CLAUDE.md', 'utf-8');
+    const updated = existing + '\n' + sessionsSection;
+    writeFileSync('CLAUDE.md', updated);
+    log('✓ Added Sessions Pattern section to CLAUDE.md', colors.green);
+  }
+}
+
 function createGitignore(strategy: string) {
   const templateMap: Record<string, string> = {
     commit: 'sessions/.gitignore-commit',
@@ -425,6 +505,14 @@ async function main() {
   log('');
   const gitStrategy = await promptGitStrategy();
   createGitignore(gitStrategy);
+
+  // Prompt for CLAUDE.md documentation
+  log('');
+  const shouldUpdateClaudeMd = await promptClaudeMdUpdate();
+  if (shouldUpdateClaudeMd) {
+    const isNew = !existsSync('CLAUDE.md');
+    createOrUpdateClaudeMd(isNew);
+  }
 
   // Check for Claude CLI
   const hasClaudeCLI = checkClaudeCLI();
