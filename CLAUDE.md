@@ -40,8 +40,9 @@ Single-file CLI tool that:
    - `.sessions/packages/` - Package-specific notes (monorepos only)
    - `.claude/commands/` - Slash commands for Claude Code
    - `.claude/scripts/` - Bash scripts for automation (new)
+   - `.git/hooks/post-merge` - Archive reminder hook (new in v0.3.5)
 4. **Populates templates** - Copies and customizes template files with project-specific data
-5. **Sets executable permissions** - Makes scripts like `should-archive.sh` executable
+5. **Sets executable permissions** - Makes scripts and git hooks executable
 6. **Detects project context** - Infers project name from package.json → git remote → directory name
 7. **Checks for Claude CLI** - Provides installation instructions if not found
 
@@ -61,7 +62,10 @@ Templates live in `templates/` and are copied to target project:
 - `archive-session.md` - Move completed work to archive
 
 **Claude scripts** (`templates/claude/scripts/`):
-- `should-archive.sh` - Bash script that parses session notes for PR references, checks if merged via gh CLI, outputs recommendation
+- `untrack-sessions.sh` - Helper script for changing git strategies
+
+**Git hooks** (`templates/git/hooks/`):
+- `post-merge` - Prompts to archive sessions after merging to main (v0.3.5+)
 
 ### Template Variable Substitution
 
@@ -110,7 +114,7 @@ Uses ANSI color codes for CLI feedback:
 **Update behavior**:
 - Creates missing directories (plans/, prep/, scripts/, packages/ if monorepo)
 - Updates slash commands to latest versions (overwrites .claude/commands/*.md)
-- Creates new script files (should-archive.sh)
+- Installs git hook for archive reminders (post-merge)
 - **Preserves** all user content in .sessions/index.md, archive/, and docs/
 - Shows changelog of new features
 - Idempotent: Running again on updated setup exits gracefully
@@ -145,29 +149,33 @@ This file follows strict context engineering principles:
 
 ## Important Patterns
 
-### Script Integration Pattern
+### Git Hook Integration Pattern
 
-**New in v0.3.0**: Slash commands can invoke Bash scripts for deterministic logic.
+**New in v0.3.5**: Git hooks prompt for archival at the right moment.
 
-**Example**: `/end-session` calls `should-archive.sh`
-```markdown
----
-allowed-tools: Bash(.claude/scripts/*:*)
----
+**Example**: `post-merge` hook after merging to main
+```bash
+# .git/hooks/post-merge
+# Prompts to archive sessions after merging to main
 
-Archive recommendation: !`.claude/scripts/should-archive.sh`
+current_branch=$(git branch --show-current)
+if [ "$current_branch" = "main" ]; then
+  echo "Archive completed session work? [y/N]"
+  # Prompts user interactively
+fi
 ```
 
 **Benefits**:
-- Reproducible detection logic (can test independently)
-- Consistent behavior across sessions
-- Offloads uncertainty from Claude to deterministic code
-- Version-controlled and debuggable
+- Triggers at the right time (after PR merge)
+- Interactive - user controls when to archive
+- Can't forget - hook reminds automatically
+- Team-friendly - works for everyone in repo
 
-**Script requirements**:
-- Executable permissions (set via `chmodSync` during scaffold)
-- Clear output format (e.g., "ARCHIVE_RECOMMENDED" or "NO_ARCHIVE")
-- Graceful error handling (exit 0 even on failure with helpful message)
+**Hook setup**:
+- Installed automatically during scaffold (`.git/hooks/post-merge`)
+- Executable permissions set via `chmodSync`
+- Only runs on main/master branch
+- Gracefully skips if `.sessions/` doesn't exist
 
 ### Sub-Agent Pattern
 
@@ -183,6 +191,44 @@ Archive recommendation: !`.claude/scripts/should-archive.sh`
 - Keeps main session context clean
 - Enables parallel work
 - Specialized agents for specific tasks (Explore for discovery, Plan for design)
+
+### Permission Pattern Consistency
+
+**New in v0.3.5**: Frontmatter `allowed-tools` and settings.json permissions MUST use matching path formats.
+
+**Critical Rule**: The permission system uses literal string matching - relative vs absolute paths are treated as different patterns.
+
+**Correct** (both relative):
+```json
+// .claude/settings.json
+{
+  "permissions": {
+    "allow": ["Bash(.claude/scripts/*:*)"]
+  }
+}
+```
+```markdown
+<!-- .claude/commands/end-session.md -->
+---
+allowed-tools: Bash(.claude/scripts/*:*)
+---
+```
+
+**Incorrect** (mismatch causes permission errors):
+- Frontmatter: `Bash(.claude/scripts/*:*)`
+- Settings: `"Bash(/Users/user/project/.claude/scripts/*:*)"`
+
+**Why Relative Paths**:
+- Command expansion runs from project root (working directory independent)
+- Portable across machines and team members
+- Pattern matching is straightforward when formats match
+- Follows Anthropic's recommended best practices
+
+**Troubleshooting**: If `/end-session` fails with "This command requires approval":
+1. Check both `.claude/settings.json` and `.claude/settings.local.json` (if exists)
+2. Ensure all paths use relative format: `.claude/scripts/*:*`
+3. Verify frontmatter matches settings exactly
+4. Restart Claude completely
 
 ### Monorepo Detection
 

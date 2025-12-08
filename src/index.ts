@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { existsSync, mkdirSync, writeFileSync, readFileSync, chmodSync } from 'fs';
+import { existsSync, mkdirSync, writeFileSync, readFileSync, chmodSync, unlinkSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { execSync } from 'child_process';
@@ -32,13 +32,13 @@ function detectVersion(): string | null {
   if (!existsSync('.sessions')) return null;
 
   // Check for v0.3-specific files (not just directories users might create)
-  const hasArchiveScript = existsSync('.claude/scripts/should-archive.sh');
   const hasPlanCommand = existsSync('.claude/commands/plan.md');
   const hasHybridGitignore = existsSync('.sessions/.gitignore') &&
     readFileSync('.sessions/.gitignore', 'utf-8').includes('!docs/');
+  const hasGitHook = existsSync('.git/hooks/post-merge');
 
   // If any v0.3-specific feature exists, consider it v0.3+
-  if (hasArchiveScript || hasPlanCommand || hasHybridGitignore) {
+  if (hasPlanCommand || hasHybridGitignore || hasGitHook) {
     return 'v0.3+';
   }
 
@@ -259,17 +259,50 @@ function updateExistingSetup() {
     const settingsContent = getTemplateContent('claude/settings.json');
     writeFileSync('.claude/settings.json', settingsContent);
     log('✓ Created .claude/settings.json', colors.green);
+  } else {
+    // Fix absolute paths in existing settings.json
+    try {
+      const settings = JSON.parse(readFileSync('.claude/settings.json', 'utf-8'));
+      let updated = false;
+
+      if (settings.permissions?.allow) {
+        settings.permissions.allow = settings.permissions.allow.map((perm: string) => {
+          // Convert absolute .claude/scripts paths to relative
+          if (perm.match(/Bash\(\/.*\/.claude\/scripts\/.*:\*\)/)) {
+            updated = true;
+            // Extract just the relative path pattern
+            if (perm.includes('*:*')) {
+              return 'Bash(.claude/scripts/*:*)';
+            }
+            // For specific script permissions, preserve the script name
+            const scriptName = perm.match(/\/([^/]+):\*\)$/)?.[1];
+            if (scriptName) {
+              return `Bash(.claude/scripts/${scriptName}:*)`;
+            }
+          }
+          return perm;
+        });
+
+        if (updated) {
+          writeFileSync('.claude/settings.json', JSON.stringify(settings, null, 2) + '\n');
+          log('✓ Updated .claude/settings.json to use relative paths', colors.green);
+        }
+      }
+    } catch (e) {
+      // Silently skip if there's an error parsing settings
+    }
+  }
+
+  // Warn about settings.local.json
+  if (existsSync('.claude/settings.local.json')) {
+    log('⚠ Note: .claude/settings.local.json detected', colors.yellow);
+    log('  You may need to manually update it to use relative paths:', colors.yellow);
+    log('  Change: Bash(/full/path/.claude/scripts/*:*)', colors.cyan);
+    log('  To:     Bash(.claude/scripts/*:*)', colors.cyan);
   }
 
   // Create scripts
   if (!skipDirectoryCreation) {
-    if (!existsSync('.claude/scripts/should-archive.sh')) {
-      const shouldArchiveScript = getTemplateContent('claude/scripts/should-archive.sh');
-      writeFileSync('.claude/scripts/should-archive.sh', shouldArchiveScript);
-      chmodSync('.claude/scripts/should-archive.sh', 0o755);
-      log('✓ Created .claude/scripts/should-archive.sh', colors.green);
-    }
-
     if (!existsSync('.claude/scripts/untrack-sessions.sh')) {
       const untrackScript = getTemplateContent('claude/scripts/untrack-sessions.sh');
       writeFileSync('.claude/scripts/untrack-sessions.sh', untrackScript);
@@ -288,6 +321,21 @@ function updateExistingSetup() {
       writeFileSync('.sessions/WORKSPACE.md', workspaceContent);
       log('✓ Created .sessions/WORKSPACE.md', colors.green);
     }
+  }
+
+  // Remove deprecated should-archive.sh script (replaced by git hook in v0.3.5)
+  if (existsSync('.claude/scripts/should-archive.sh')) {
+    unlinkSync('.claude/scripts/should-archive.sh');
+    log('✓ Removed deprecated should-archive.sh script', colors.yellow);
+  }
+
+  // Set up git post-merge hook for archive reminders (always check, even for v0.3+ users)
+  if (existsSync('.git/hooks') && !existsSync('.git/hooks/post-merge')) {
+    const hookPath = '.git/hooks/post-merge';
+    const hookContent = getTemplateContent('git/hooks/post-merge');
+    writeFileSync(hookPath, hookContent);
+    chmodSync(hookPath, 0o755);
+    log('✓ Created git post-merge hook for archive reminders', colors.green);
   }
 
   log('\n✓ Update complete! Your existing work is preserved.', colors.green + colors.bright);
@@ -480,11 +528,6 @@ function createSessionsDirectory() {
   log('✓ Created .claude/commands/change-git-strategy.md', colors.green);
 
   // Create scripts
-  const shouldArchiveScript = getTemplateContent('claude/scripts/should-archive.sh');
-  writeFileSync('.claude/scripts/should-archive.sh', shouldArchiveScript);
-  chmodSync('.claude/scripts/should-archive.sh', 0o755);
-  log('✓ Created .claude/scripts/should-archive.sh', colors.green);
-
   const untrackScript = getTemplateContent('claude/scripts/untrack-sessions.sh');
   writeFileSync('.claude/scripts/untrack-sessions.sh', untrackScript);
   chmodSync('.claude/scripts/untrack-sessions.sh', 0o755);
@@ -494,6 +537,15 @@ function createSessionsDirectory() {
   const settingsContent = getTemplateContent('claude/settings.json');
   writeFileSync('.claude/settings.json', settingsContent);
   log('✓ Created .claude/settings.json', colors.green);
+
+  // Set up git post-merge hook for archive reminders
+  if (existsSync('.git/hooks')) {
+    const hookPath = '.git/hooks/post-merge';
+    const hookContent = getTemplateContent('git/hooks/post-merge');
+    writeFileSync(hookPath, hookContent);
+    chmodSync(hookPath, 0o755);
+    log('✓ Created git post-merge hook for archive reminders', colors.green);
+  }
 }
 
 async function main() {
@@ -522,8 +574,9 @@ async function main() {
     log('\n🎉 Update complete!\n', colors.green + colors.bright);
 
     if (isOlderVersion) {
-      log('What\'s new in v0.3.0:', colors.bright);
-      log('  • Smart PR detection and archiving (.claude/scripts/should-archive.sh)');
+      log('What\'s new in v0.3.5:', colors.bright);
+      log('  • Git hook for archive reminders (post-merge)');
+      log('  • Ask mode for script permissions (better UX)');
       log('  • GitHub/Linear issue integration (/start-session)');
       log('  • Implementation planning (/plan)');
       log('  • Enhanced documentation with sub-agents (/document)');

@@ -1,0 +1,32 @@
+#!/bin/bash
+
+# post-merge hook
+# Prompts to archive sessions after merging to main
+
+# Only run on main branch
+current_branch=$(git branch --show-current)
+if [ "$current_branch" != "main" ] && [ "$current_branch" != "master" ]; then
+  exit 0
+fi
+
+# Check if .sessions directory exists
+if [ ! -d ".sessions" ]; then
+  exit 0
+fi
+
+# Prompt user for archival
+echo ""
+echo "📦 Sessions Directory: Merged to main!"
+echo ""
+read -p "Archive completed session work? [y/N] " -n 1 -r
+echo ""
+
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+  echo "💡 Please run: /archive-session"
+  echo "   (in your next Claude Code session)"
+else
+  echo "Skipped. Run '/archive-session' when ready."
+fi
+echo ""
+
+exit 0

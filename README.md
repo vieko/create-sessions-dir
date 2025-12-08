@@ -50,7 +50,7 @@ Then start your first session:
     plan.md             # /plan command
     archive-session.md  # /archive-session command
   scripts/
-    should-archive.sh   # PR detection for smart archiving
+    untrack-sessions.sh # Git strategy helper
 ```
 
 ## Usage
@@ -119,6 +119,56 @@ During installation, you'll be prompted for:
    - Creates new CLAUDE.md if none exists
    - Appends to existing CLAUDE.md if detected
    - Skips if Sessions Pattern already documented
+
+## Troubleshooting
+
+### Permission Errors with Slash Commands
+
+If you get **"This command requires approval"** errors when running `/end-session` or other slash commands:
+
+**Cause**: Mismatch between frontmatter `allowed-tools` and `.claude/settings.json` permissions. The permission system uses literal string matching, so relative vs absolute paths are treated as different patterns.
+
+**Solution**:
+
+1. **Check `.claude/settings.json` exists** at project root
+2. **Verify patterns use relative paths**: `Bash(.claude/scripts/*:*)`
+3. **Check `.claude/settings.local.json`** (if exists) also uses relative paths
+4. **Ensure patterns match** between frontmatter and settings files
+5. **Restart Claude** - quit completely and start fresh
+
+**Correct configuration example**:
+
+`.claude/settings.json`:
+```json
+{
+  "permissions": {
+    "allow": [
+      "Bash(.claude/scripts/*:*)",
+      "Bash(git:*)",
+      "Bash(gh:*)"
+    ]
+  }
+}
+```
+
+`.claude/commands/end-session.md`:
+```markdown
+---
+allowed-tools: Bash(git:*), Bash(.claude/scripts/*:*)
+---
+```
+
+**Note**: Both files must use the same path format (relative: `.claude/scripts/*` NOT absolute: `/Users/you/project/.claude/scripts/*`)
+
+### Updating from Older Versions
+
+If you installed before v0.3.5 and have permission issues:
+
+```bash
+npx create-sessions-dir
+```
+
+This will automatically detect and fix absolute paths in your `.claude/settings.json`. You may need to manually update `.claude/settings.local.json` if it exists.
 
 ## Why This Works
 
