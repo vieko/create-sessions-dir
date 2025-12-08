@@ -98,6 +98,36 @@ Uses ANSI color codes for CLI feedback:
 3. **Modifying CLI logic**: Edit `src/index.ts` and rebuild
 4. **Publishing**: Version bump → `npm publish` (prepublishOnly hook runs build automatically)
 
+## Update Path for Existing Users
+
+**New in v0.3.0**: Smart update mechanism that preserves user work.
+
+**Detection logic**:
+- Checks for `.sessions/plans`, `.sessions/prep`, `.claude/scripts` directories
+- If missing → Detected as v0.1-0.2 (old version)
+- If present → Detected as v0.3+ (current or newer)
+
+**Update behavior**:
+- Creates missing directories (plans/, prep/, scripts/, packages/ if monorepo)
+- Updates slash commands to latest versions (overwrites .claude/commands/*.md)
+- Creates new script files (should-archive.sh)
+- **Preserves** all user content in .sessions/index.md, archive/, and docs/
+- Shows changelog of new features
+- Idempotent: Running again on updated setup exits gracefully
+
+**Testing update path**:
+```bash
+# Simulate old installation
+mkdir -p .sessions/archive .claude/commands
+echo "# Old content" > .sessions/index.md
+
+# Run updater
+npx create-sessions-dir
+
+# Verify old content preserved
+cat .sessions/index.md  # Should show "# Old content"
+```
+
 ## Important Patterns
 
 ### Script Integration Pattern
@@ -145,8 +175,9 @@ Archive recommendation: !`.claude/scripts/should-archive.sh`
 
 **Detection order**:
 1. `pnpm-workspace.yaml` → Parse YAML for packages array
-2. `package.json` → Check for `workspaces` field
+2. `package.json` → Check for `workspaces` field (npm/yarn/bun/Turborepo)
 3. `lerna.json` → Check for `packages` field
+4. `turbo.json` or `turbo.jsonc` → Fallback for Turborepo without explicit workspace config
 
 **If detected**:
 - Creates `.sessions/packages/` directory

@@ -88,6 +88,16 @@ Claude moves finished work to the archive to keep your context file clean.
 - Any project (works with any language/framework)
 - Claude Code CLI (optional but recommended for slash commands)
 
+## Updating
+
+Already have a Sessions Directory from v0.1 or v0.2? Just run:
+
+```bash
+npx create-sessions-dir
+```
+
+It will detect your existing setup and update it to v0.3.0 **without touching your work**. All your session notes, archive, and docs are preserved. Only the commands and structure are updated.
+
 ## Why This Works
 
 AI coding agents are stateless - they don't remember previous sessions. The Sessions Directory Pattern solves this by:
