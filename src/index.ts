@@ -31,16 +31,18 @@ function detectVersion(): string | null {
   // Try to detect version from existing setup
   if (!existsSync('.sessions')) return null;
 
-  // v0.1.x-0.2.x: Has .sessions but no plans/ or prep/
-  const hasPlans = existsSync('.sessions/plans');
-  const hasPrep = existsSync('.sessions/prep');
-  const hasScripts = existsSync('.claude/scripts');
+  // Check for v0.3-specific files (not just directories users might create)
+  const hasArchiveScript = existsSync('.claude/scripts/should-archive.sh');
+  const hasPlanCommand = existsSync('.claude/commands/plan.md');
+  const hasHybridGitignore = existsSync('.sessions/.gitignore') &&
+    readFileSync('.sessions/.gitignore', 'utf-8').includes('!docs/');
 
-  if (!hasPlans && !hasPrep && !hasScripts) {
-    return 'v0.1-0.2'; // Old version
+  // If any v0.3-specific feature exists, consider it v0.3+
+  if (hasArchiveScript || hasPlanCommand || hasHybridGitignore) {
+    return 'v0.3+';
   }
 
-  return 'v0.3+'; // Current or newer
+  return 'v0.1-0.2'; // Old version
 }
 
 async function promptGitStrategy(): Promise<string> {
@@ -138,11 +140,14 @@ function updateExistingSetup() {
     log(`✓ Updated .claude/commands/${cmd}.md`, colors.green);
   }
 
-  // Create new plan command
-  if (!existsSync('.claude/commands/plan.md')) {
-    const planContent = getTemplateContent('claude/commands/plan.md');
-    writeFileSync('.claude/commands/plan.md', planContent);
-    log('✓ Created .claude/commands/plan.md', colors.green);
+  // Create new v0.3 commands
+  const newCommands = ['plan', 'change-git-strategy'];
+  for (const cmd of newCommands) {
+    if (!existsSync(`.claude/commands/${cmd}.md`)) {
+      const content = getTemplateContent(`claude/commands/${cmd}.md`);
+      writeFileSync(`.claude/commands/${cmd}.md`, content);
+      log(`✓ Created .claude/commands/${cmd}.md`, colors.green);
+    }
   }
 
   // Create script
@@ -345,6 +350,10 @@ function createSessionsDirectory() {
   const planContent = getTemplateContent('claude/commands/plan.md');
   writeFileSync('.claude/commands/plan.md', planContent);
   log('✓ Created .claude/commands/plan.md', colors.green);
+
+  const changeGitStrategyContent = getTemplateContent('claude/commands/change-git-strategy.md');
+  writeFileSync('.claude/commands/change-git-strategy.md', changeGitStrategyContent);
+  log('✓ Created .claude/commands/change-git-strategy.md', colors.green);
 
   // Create scripts
   const shouldArchiveScript = getTemplateContent('claude/scripts/should-archive.sh');
