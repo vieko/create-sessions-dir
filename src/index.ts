@@ -52,7 +52,12 @@ async function promptGitStrategy(): Promise<string> {
     message: 'How should .sessions/ be handled in git?',
     choices: [
       {
-        title: 'Hybrid (recommended)',
+        title: 'Ignore all (recommended)',
+        value: 'ignore',
+        description: 'Keep sessions completely local (start solo, share later if needed)'
+      },
+      {
+        title: 'Hybrid',
         value: 'hybrid',
         description: 'Commit docs/plans, keep working notes private'
       },
@@ -60,17 +65,12 @@ async function promptGitStrategy(): Promise<string> {
         title: 'Commit all',
         value: 'commit',
         description: 'Share session notes with team, preserve history'
-      },
-      {
-        title: 'Ignore all',
-        value: 'ignore',
-        description: 'Keep sessions completely local'
       }
     ],
     initial: 0
   });
 
-  return response.strategy || 'hybrid';
+  return response.strategy || 'ignore';
 }
 
 function createGitignore(strategy: string) {
@@ -119,17 +119,17 @@ function updateExistingSetup() {
     log('✓ Created .claude/scripts/', colors.green);
   }
 
-  // Update .gitignore to hybrid if it only has basic content
+  // Update .gitignore to ignore if it only has basic content
   if (existsSync('.sessions/.gitignore')) {
     const existing = readFileSync('.sessions/.gitignore', 'utf-8');
-    // If it's the old basic version, update to hybrid
+    // If it's the old basic version, update to ignore (safest for updates)
     if (existing.includes('data/') && existing.includes('scratch/') && existing.split('\n').length < 10) {
-      createGitignore('hybrid');
-      log('✓ Updated .sessions/.gitignore to hybrid strategy', colors.cyan);
+      createGitignore('ignore');
+      log('✓ Updated .sessions/.gitignore to ignore strategy', colors.cyan);
     }
   } else {
-    // No gitignore exists, create hybrid (safest for updates)
-    createGitignore('hybrid');
+    // No gitignore exists, create ignore (safest for updates - prevents accidental commits)
+    createGitignore('ignore');
   }
 
   // Update or create commands
