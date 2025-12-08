@@ -131,6 +131,14 @@ AI coding agents are stateless - they don't remember previous sessions. The Sess
 
 Read the full story: [vieko.dev/sessions](https://vieko.dev/sessions)
 
+## References
+
+The Sessions Directory Pattern is informed by research and best practices in AI agent context management:
+
+- [Effective Context Engineering for AI Agents](https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents) - Anthropic's engineering guide on context engineering patterns, including structured note-taking, just-in-time context, and sub-agent architectures
+- [Building effective agents](https://www.anthropic.com/research/building-effective-agents) - Anthropic's research overview on agent design patterns and workflows
+- [Writing a good CLAUDE.md](https://www.humanlayer.dev/blog/writing-a-good-claude-md) - HumanLayer's practical guide to effective context files, including length targets, the WHY/WHAT/HOW framework, and anti-patterns to avoid
+
 ## Acknowledgments
 
 Thanks to [Aman Azad](https://github.com/namadaza) for the nudge to turn the pattern into a tool.

@@ -128,6 +128,21 @@ npx create-sessions-dir
 cat .sessions/index.md  # Should show "# Old content"
 ```
 
+## Context Engineering Best Practices
+
+This file follows strict context engineering principles:
+
+**Length target**: <300 lines for CLAUDE.md (currently within budget)
+**Content type**: Facts and architecture (WHY/WHAT/HOW), not behavioral instructions
+**Instruction budget**: ~150-200 instructions max for frontier models. This file provides context, not rules.
+**Progressive disclosure**: Deep technical details live in code comments and git history, not here
+
+**Anti-patterns avoided**:
+- [NO] Code style rules (use linters/formatters instead)
+- [NO] Behavioral hotfixes (use deterministic tools/scripts)
+- [NO] Code duplication (reference file:line instead)
+- [NO] Task-specific workarounds (keep universally applicable)
+
 ## Important Patterns
 
 ### Script Integration Pattern
