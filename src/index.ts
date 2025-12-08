@@ -254,6 +254,13 @@ function updateExistingSetup() {
     }
   }
 
+  // Always create or update settings.json for permissions
+  if (!existsSync('.claude/settings.json')) {
+    const settingsContent = getTemplateContent('claude/settings.json');
+    writeFileSync('.claude/settings.json', settingsContent);
+    log('✓ Created .claude/settings.json', colors.green);
+  }
+
   // Create scripts
   if (!skipDirectoryCreation) {
     if (!existsSync('.claude/scripts/should-archive.sh')) {
@@ -482,6 +489,11 @@ function createSessionsDirectory() {
   writeFileSync('.claude/scripts/untrack-sessions.sh', untrackScript);
   chmodSync('.claude/scripts/untrack-sessions.sh', 0o755);
   log('✓ Created .claude/scripts/untrack-sessions.sh', colors.green);
+
+  // Create settings.json for tool permissions
+  const settingsContent = getTemplateContent('claude/settings.json');
+  writeFileSync('.claude/settings.json', settingsContent);
+  log('✓ Created .claude/settings.json', colors.green);
 }
 
 async function main() {

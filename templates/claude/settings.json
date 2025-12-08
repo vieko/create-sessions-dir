@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(.claude/scripts/should-archive.sh:*)",
+      "Bash(.claude/scripts/untrack-sessions.sh:*)",
+      "Bash(git:*)",
+      "Bash(gh:*)",
+      "Bash(linearis:*)"
+    ]
+  }
+}
