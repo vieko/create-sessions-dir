@@ -83,6 +83,12 @@ Claude launches an exploration agent to understand the topic, then creates docum
 ```
 Claude moves finished work to the archive to keep your context file clean.
 
+### Change Git Strategy
+```
+/change-git-strategy
+```
+Change how .sessions/ is handled in git (hybrid, commit all, or ignore all). Useful if you want to share more/less with your team.
+
 ## Requirements
 
 - Any project (works with any language/framework)
