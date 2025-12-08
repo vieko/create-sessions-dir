@@ -150,12 +150,19 @@ function updateExistingSetup() {
     }
   }
 
-  // Create script
+  // Create scripts
   if (!existsSync('.claude/scripts/should-archive.sh')) {
     const shouldArchiveScript = getTemplateContent('claude/scripts/should-archive.sh');
     writeFileSync('.claude/scripts/should-archive.sh', shouldArchiveScript);
     chmodSync('.claude/scripts/should-archive.sh', 0o755);
     log('✓ Created .claude/scripts/should-archive.sh', colors.green);
+  }
+
+  if (!existsSync('.claude/scripts/untrack-sessions.sh')) {
+    const untrackScript = getTemplateContent('claude/scripts/untrack-sessions.sh');
+    writeFileSync('.claude/scripts/untrack-sessions.sh', untrackScript);
+    chmodSync('.claude/scripts/untrack-sessions.sh', 0o755);
+    log('✓ Created .claude/scripts/untrack-sessions.sh', colors.green);
   }
 
   // Check for monorepo and add workspace support if needed
@@ -360,6 +367,11 @@ function createSessionsDirectory() {
   writeFileSync('.claude/scripts/should-archive.sh', shouldArchiveScript);
   chmodSync('.claude/scripts/should-archive.sh', 0o755);
   log('✓ Created .claude/scripts/should-archive.sh', colors.green);
+
+  const untrackScript = getTemplateContent('claude/scripts/untrack-sessions.sh');
+  writeFileSync('.claude/scripts/untrack-sessions.sh', untrackScript);
+  chmodSync('.claude/scripts/untrack-sessions.sh', 0o755);
+  log('✓ Created .claude/scripts/untrack-sessions.sh', colors.green);
 }
 
 async function main() {

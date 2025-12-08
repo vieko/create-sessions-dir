@@ -69,6 +69,47 @@ Change the git strategy for .sessions/ directory.
 
 3. Show what changed:
    - "Changed from [old strategy] to [new strategy]"
-   - "Run 'git status .sessions/' to see what will be committed"
+   - "Run 'git status .sessions/' to see current state"
 
-4. Remind user to review git status and commit if needed
+4. Check if any .sessions/ files are already tracked in git:
+   ```bash
+   git ls-files .sessions/
+   ```
+
+   If files are found AND new strategy is more restrictive:
+   - **Switching to "ignore all"**: Warn that previously committed files are still tracked
+   - **Switching to "hybrid"**: Warn that personal files (index.md, archive/) are still tracked
+
+   Provide the command to untrack them:
+   ```bash
+   # For ignore all:
+   git rm --cached -r .sessions/
+
+   # For hybrid (untrack personal files only):
+   git rm --cached .sessions/index.md .sessions/archive/ .sessions/prep/
+   ```
+
+   **Important**: This removes files from git tracking but keeps them on disk.
+
+   Provide two options:
+
+   **Option A: Use helper script (recommended)**
+   ```bash
+   .claude/scripts/untrack-sessions.sh [ignore|hybrid]
+   ```
+
+   **Option B: Manual git command**
+   ```bash
+   git rm --cached -r .sessions/                    # For ignore all
+   git rm --cached .sessions/index.md ...           # For hybrid
+   ```
+
+   Ask user: "Do you want me to run the helper script now? [y/N]"
+   - If yes: Run `.claude/scripts/untrack-sessions.sh [strategy]`, show result
+   - If no: Show both options they can run manually
+
+5. Remind user to commit the .gitignore change:
+   ```bash
+   git add .sessions/.gitignore
+   git commit -m "Change sessions git strategy to [new strategy]"
+   ```
