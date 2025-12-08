@@ -14,23 +14,18 @@ Summarize:
 
 Then ask: "What do you want to work on this session?"
 
-Handle user response:
+**Only fetch external context if user provides a new URL or issue ID:**
 
-**If user provides a GitHub/Linear URL or issue ID:**
-  - **GitHub PR/Issue**: Use gh CLI to fetch details
-    - For PRs: gh pr view [URL] --json title,body,state,labels
-    - For issues: gh issue view [URL] --json title,body,state,labels
-  - **Linear Issue**: Use linearis CLI to fetch details (if available)
-    - For Linear IDs (e.g., DEV-456, GTMENG-304): linearis issues read [ID]
-  - Parse the JSON output and summarize: title, description, key points, acceptance criteria, labels/status
-  - Create .sessions/prep/YYYY-MM-DD-topic.md with structured context
-  - Update index.md with reference: "Working on: [Description] (see prep/YYYY-MM-DD-topic.md)"
+If user provides a GitHub/Linear URL or issue ID:
+  - **GitHub**: gh pr view [URL] --json title,body,state,labels
+  - **GitHub**: gh issue view [URL] --json title,body,state,labels
+  - **Linear**: linearis issues read [ID] (e.g., DEV-456, GTMENG-304)
+  - Summarize the fetched context
+  - Store in .sessions/prep/YYYY-MM-DD-topic.md
+  - Add reference to index.md
 
-**If user selects from next priorities or says "continue":**
-  - If they reference a PR/issue number from the context (e.g., "#234" or "GTMENG-304"), offer to fetch current status
-  - Otherwise proceed with existing context
-
-**If user provides a description:**
-  - Proceed with that context
+Otherwise (continuing work, ad-hoc task, etc.):
+  - Proceed with existing session context
+  - Session notes are the source of truth for ongoing work
 
 Confirm understanding and ask how to proceed.
