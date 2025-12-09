@@ -65,7 +65,7 @@ Claude reads your context and asks what you want to work on. You can provide a G
 ```
 /end-session
 ```
-Claude updates your context with what happened. If you referenced PRs (like #123) and they're merged, Claude will offer to archive automatically. Then commits the changes.
+Claude updates your context with session accomplishments and commits the changes.
 
 ### Plan Implementation
 ```
@@ -84,6 +84,8 @@ Claude launches an exploration agent to understand the topic, then creates docum
 /archive-session
 ```
 Claude moves finished work to the archive to keep your context file clean.
+
+**Automatic Prompts**: After merging to main, a git hook automatically prompts whether to archive completed sessions - archiving happens at the right moment without manual tracking.
 
 ### Change Git Strategy
 ```

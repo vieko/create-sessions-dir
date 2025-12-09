@@ -87,6 +87,8 @@ Updates your session context with what happened. Claude will:
 - Set next session priorities
 - Commit the changes
 
+**Note**: Archiving is prompted automatically by a git hook after merging to main - you don't need to manually track when to archive.
+
 ### `/document <topic>`
 Creates topic-specific documentation as your project grows. Claude will:
 - Create `.sessions/docs/` folder (first time only)
@@ -100,6 +102,8 @@ Creates topic-specific documentation as your project grows. Claude will:
 Archives completed work to keep your context file clean. Claude will:
 - Move finished notes to `.sessions/archive/`
 - Clean up completed items from index.md
+
+**When to archive**: A git hook automatically prompts you after merging to main. This ensures archiving happens at the right moment (when work is complete and merged) without manual tracking.
 
 ---
 
