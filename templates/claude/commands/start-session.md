@@ -1,11 +1,15 @@
 ---
-allowed-tools: Bash(gh:*), Bash(linearis:*)
+allowed-tools: Bash(gh:*), Bash(linearis:*), Bash(git rev-parse --show-toplevel)
 description: Start a new session
 ---
 
-Read .sessions/index.md and report when ready.
+**First**: Find the git root to locate session files (supports monorepos):
+- Run: `git rev-parse --show-toplevel` to get the repository root path
+- Session files live at `<git-root>/.sessions/`
 
-Check if .sessions/WORKSPACE.md exists (don't error if missing). If it exists, mention that monorepo support is active and show detected packages.
+Read `<git-root>/.sessions/index.md` and report when ready.
+
+Check if `<git-root>/.sessions/WORKSPACE.md` exists (don't error if missing). If it exists, mention that monorepo support is active and show detected packages.
 
 Summarize:
 - Current state
@@ -21,7 +25,7 @@ If user provides a GitHub/Linear URL or issue ID:
   - **GitHub**: gh issue view [URL] --json title,body,state,labels
   - **Linear**: linearis issues read [ID] (e.g., DEV-456, GTMENG-304)
   - Summarize the fetched context
-  - Store in .sessions/prep/YYYY-MM-DD-topic.md
+  - Store in `<git-root>/.sessions/prep/YYYY-MM-DD-topic.md`
   - Add reference to index.md
 
 Otherwise (continuing work, ad-hoc task, etc.):

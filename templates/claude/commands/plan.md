@@ -2,10 +2,14 @@
 description: Create implementation plan
 ---
 
-Create or update a plan in .sessions/plans/
+**First**: Find the git root to locate session files (supports monorepos):
+- Run: `git rev-parse --show-toplevel` to get the repository root path
+- Session files live at `<git-root>/.sessions/`
+
+Create or update a plan in `<git-root>/.sessions/plans/`
 
 Steps:
-1. If .sessions/plans/ doesn't exist, create it first
+1. If `<git-root>/.sessions/plans/` doesn't exist, create it first
 2. Ask: "What are you planning to implement?"
 3. Launch a Plan agent with:
    "Help design the implementation for [description].
@@ -17,7 +21,7 @@ Steps:
    - Implementation steps
    - Risks and open questions"
 
-4. Create .sessions/plans/YYYY-MM-DD-<name>.md with structured plan:
+4. Create `<git-root>/.sessions/plans/YYYY-MM-DD-<name>.md` with structured plan:
 
 ```markdown
 # Plan: [Feature Name]
@@ -48,6 +52,6 @@ Steps:
 - Links to issues, PRs, other plans
 ```
 
-5. Add reference to plan in index.md: "Planning: [Feature] (see plans/YYYY-MM-DD-<name>.md)"
+5. Add reference to plan in `<git-root>/.sessions/index.md`: "Planning: [Feature] (see plans/YYYY-MM-DD-<name>.md)"
 
 Then ask: "Ready to start implementing?"

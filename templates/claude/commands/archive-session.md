@@ -2,7 +2,11 @@
 description: Archive completed session work
 ---
 
-Review completed work in .sessions/ and archive it.
+**First**: Find the git root to locate session files (supports monorepos):
+- Run: `git rev-parse --show-toplevel` to get the repository root path
+- Session files live at `<git-root>/.sessions/`
 
-Move finished session notes to .sessions/archive/ organized by date or topic.
-Clean up .sessions/index.md by removing completed items.
+Review completed work in `<git-root>/.sessions/` and archive it.
+
+Move finished session notes to `<git-root>/.sessions/archive/` organized by date or topic.
+Clean up `<git-root>/.sessions/index.md` by removing completed items.
