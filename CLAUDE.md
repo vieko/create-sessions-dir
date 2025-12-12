@@ -23,7 +23,7 @@ npm run build && cd /tmp/test-project && npx /path/to/create-sessions-dir
 ## External Dependencies (Optional)
 
 - **gh CLI**: Required for GitHub PR/issue integration in `/start-session` and `/end-session`
-- **linearis CLI**: Optional for Linear issue integration (`npm install -g linearis`)
+- **Linear MCP**: Optional for Linear issue integration (configure in Claude settings)
 
 ## Project Architecture
 

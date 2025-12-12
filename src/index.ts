@@ -125,13 +125,8 @@ gh auth login    # Required for PR/issue fetching
 \`\`\`
 
 **For Linear integration:**
-\`\`\`bash
-npm install -g linearis
-echo "your-api-token" > ~/.linear_api_token
-# Or: export LINEAR_API_TOKEN=your-token
-\`\`\`
-
-Get token: Linear Settings → Security & Access → Personal API keys
+Configure the Linear MCP server in your Claude settings.
+See: https://github.com/anthropics/claude-code/blob/main/docs/mcp.md
 
 Commands will gracefully handle missing tools and prompt for manual input.
 `;
@@ -574,10 +569,11 @@ async function main() {
     log('\n🎉 Update complete!\n', colors.green + colors.bright);
 
     if (isOlderVersion) {
-      log('What\'s new in v0.3.5:', colors.bright);
+      log('What\'s new in v0.3.8:', colors.bright);
       log('  • Git hook for archive reminders (post-merge)');
       log('  • Ask mode for script permissions (better UX)');
-      log('  • GitHub/Linear issue integration (/start-session)');
+      log('  • GitHub integration via gh CLI (/start-session)');
+      log('  • Linear integration via MCP (/start-session)');
       log('  • Implementation planning (/plan)');
       log('  • Enhanced documentation with sub-agents (/document)');
       log('  • Monorepo support (auto-detected)');

@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.8] - 2025-12-11
+
+### Changed
+- **Linear integration**: Replaced `linearis` CLI with Linear MCP
+  - Removed `Bash(linearis:*)` from allowed-tools and settings.json
+  - Updated `/start-session` to use available Linear MCP tools
+  - Updated setup instructions to reference Linear MCP configuration
+
+### Removed
+- `linearis` CLI dependency (Linear MCP is the recommended integration)
+
 ## [0.3.7] - 2024-12-10
 
 ### Fixed

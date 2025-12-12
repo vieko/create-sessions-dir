@@ -2,8 +2,7 @@
   "permissions": {
     "allow": [
       "Bash(git:*)",
-      "Bash(gh:*)",
-      "Bash(linearis:*)"
+      "Bash(gh:*)"
     ],
     "ask": [
       "Bash(.claude/scripts/*:*)"

@@ -1,5 +1,5 @@
 ---
-allowed-tools: Bash(gh:*), Bash(linearis:*), Bash(git rev-parse --show-toplevel)
+allowed-tools: Bash(gh:*), Bash(git rev-parse --show-toplevel)
 description: Start a new session
 ---
 
@@ -23,7 +23,7 @@ Then ask: "What do you want to work on this session?"
 If user provides a GitHub/Linear URL or issue ID:
   - **GitHub**: gh pr view [URL] --json title,body,state,labels
   - **GitHub**: gh issue view [URL] --json title,body,state,labels
-  - **Linear**: linearis issues read [ID] (e.g., DEV-456, GTMENG-304)
+  - **Linear**: If Linear MCP is configured, use available Linear tools to fetch issue
   - Summarize the fetched context
   - Store in `<git-root>/.sessions/prep/YYYY-MM-DD-topic.md`
   - Add reference to index.md
