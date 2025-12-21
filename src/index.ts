@@ -27,22 +27,119 @@ function checkExistingSessions(): boolean {
   return existsSync('.sessions');
 }
 
+// Version tracking
+function getPackageVersion(): string {
+  const pkgPath = join(__dirname, '..', 'package.json');
+  const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8'));
+  return pkg.version;
+}
+
+function getInstalledVersion(): string | null {
+  const versionFile = '.sessions/.version';
+  if (existsSync(versionFile)) {
+    return readFileSync(versionFile, 'utf-8').trim();
+  }
+  return null;
+}
+
+function writeInstalledVersion(version: string): void {
+  writeFileSync('.sessions/.version', version + '\n');
+}
+
+function parseVersion(version: string): { major: number; minor: number; patch: number } {
+  const [major, minor, patch] = version.replace(/^v/, '').split('.').map(Number);
+  return { major: major || 0, minor: minor || 0, patch: patch || 0 };
+}
+
+function compareVersions(a: string, b: string): number {
+  const vA = parseVersion(a);
+  const vB = parseVersion(b);
+
+  if (vA.major !== vB.major) return vA.major - vB.major;
+  if (vA.minor !== vB.minor) return vA.minor - vB.minor;
+  return vA.patch - vB.patch;
+}
+
+function isVersionLessThan(installed: string, target: string): boolean {
+  return compareVersions(installed, target) < 0;
+}
+
+// Changelog entries by version
+interface ChangelogEntry {
+  version: string;
+  changes: string[];
+}
+
+const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.3.9',
+    changes: [
+      'Session context skill (Claude auto-reads .sessions/index.md)',
+      'Robust version tracking with .sessions/.version',
+    ]
+  },
+  {
+    version: '0.3.8',
+    changes: [
+      'Linear MCP integration (replaced linearis CLI)',
+    ]
+  },
+  {
+    version: '0.3.5',
+    changes: [
+      'Git hook for archive reminders (post-merge)',
+      'Ask mode for script permissions (better UX)',
+      'Permission system overhaul',
+    ]
+  },
+  {
+    version: '0.3.0',
+    changes: [
+      'GitHub integration via gh CLI (/start-session)',
+      'Implementation planning (/plan)',
+      'Enhanced documentation with sub-agents (/document)',
+      'Monorepo support (auto-detected)',
+      'Interactive git strategy selection',
+      'New directories: plans/, prep/',
+    ]
+  },
+];
+
+function getChangesFromVersion(installedVersion: string | null): string[] {
+  if (!installedVersion) {
+    // Legacy install without version file - show all changes from 0.3.0+
+    return CHANGELOG.flatMap(entry => entry.changes);
+  }
+
+  const changes: string[] = [];
+  for (const entry of CHANGELOG) {
+    if (isVersionLessThan(installedVersion, entry.version)) {
+      changes.push(...entry.changes);
+    }
+  }
+  return changes;
+}
+
 function detectVersion(): string | null {
-  // Try to detect version from existing setup
   if (!existsSync('.sessions')) return null;
 
-  // Check for v0.3-specific files (not just directories users might create)
+  // Check for explicit version file first
+  const installedVersion = getInstalledVersion();
+  if (installedVersion) {
+    return installedVersion;
+  }
+
+  // Legacy detection for pre-0.3.9 installs (no version file)
   const hasPlanCommand = existsSync('.claude/commands/plan.md');
   const hasHybridGitignore = existsSync('.sessions/.gitignore') &&
     readFileSync('.sessions/.gitignore', 'utf-8').includes('!docs/');
   const hasGitHook = existsSync('.git/hooks/post-merge');
 
-  // If any v0.3-specific feature exists, consider it v0.3+
-  if (hasPlanCommand || hasHybridGitignore || hasGitHook) {
-    return 'v0.3+';
-  }
+  // Estimate version based on features present
+  if (hasGitHook) return '0.3.5'; // Git hooks added in 0.3.5
+  if (hasPlanCommand || hasHybridGitignore) return '0.3.0';
 
-  return 'v0.1-0.2'; // Old version
+  return '0.1.0'; // Very old version
 }
 
 async function promptGitStrategy(): Promise<string> {
@@ -190,7 +287,7 @@ function createGitignore(strategy: string) {
 }
 
 function updateExistingSetup() {
-  log('\n📦 Updating existing Sessions Directory...', colors.cyan);
+  log('\n[*] Updating existing Sessions Directory...', colors.cyan);
 
   const version = detectVersion();
 
@@ -213,6 +310,11 @@ function updateExistingSetup() {
     if (!existsSync('.claude/scripts')) {
       mkdirSync('.claude/scripts', { recursive: true });
       log('✓ Created .claude/scripts/', colors.green);
+    }
+
+    if (!existsSync('.claude/skills')) {
+      mkdirSync('.claude/skills/session-context', { recursive: true });
+      log('✓ Created .claude/skills/', colors.green);
     }
   }
 
@@ -248,6 +350,14 @@ function updateExistingSetup() {
       log(`✓ Created .claude/commands/${cmd}.md`, colors.green);
     }
   }
+
+  // Create or update skills
+  if (!existsSync('.claude/skills/session-context')) {
+    mkdirSync('.claude/skills/session-context', { recursive: true });
+  }
+  const sessionContextSkill = getTemplateContent('claude/skills/session-context/SKILL.md');
+  writeFileSync('.claude/skills/session-context/SKILL.md', sessionContextSkill);
+  log('✓ Updated .claude/skills/session-context/SKILL.md', colors.green);
 
   // Always create or update settings.json for permissions
   if (!existsSync('.claude/settings.json')) {
@@ -290,7 +400,7 @@ function updateExistingSetup() {
 
   // Warn about settings.local.json
   if (existsSync('.claude/settings.local.json')) {
-    log('⚠ Note: .claude/settings.local.json detected', colors.yellow);
+    log('[!] Note: .claude/settings.local.json detected', colors.yellow);
     log('  You may need to manually update it to use relative paths:', colors.yellow);
     log('  Change: Bash(/full/path/.claude/scripts/*:*)', colors.cyan);
     log('  To:     Bash(.claude/scripts/*:*)', colors.cyan);
@@ -333,11 +443,12 @@ function updateExistingSetup() {
     log('✓ Created git post-merge hook for archive reminders', colors.green);
   }
 
-  log('\n✓ Update complete! Your existing work is preserved.', colors.green + colors.bright);
+  // Write version file for future update tracking
+  const packageVersion = getPackageVersion();
+  writeInstalledVersion(packageVersion);
+  log(`✓ Updated .sessions/.version (${packageVersion})`, colors.green);
 
-  if (skipDirectoryCreation) {
-    log('   Commands updated to latest templates.', colors.cyan);
-  }
+  log('\n✓ Update complete! Your existing work is preserved.', colors.green + colors.bright);
 }
 
 function checkClaudeCLI(): boolean {
@@ -464,6 +575,7 @@ function createSessionsDirectory() {
   mkdirSync('.claude', { recursive: true });
   mkdirSync('.claude/commands', { recursive: true });
   mkdirSync('.claude/scripts', { recursive: true });
+  mkdirSync('.claude/skills/session-context', { recursive: true });
 
   log('\n✓ Created .sessions/ directory', colors.green);
   log('✓ Created .sessions/archive/ directory', colors.green);
@@ -471,6 +583,7 @@ function createSessionsDirectory() {
   log('✓ Created .sessions/prep/ directory', colors.green);
   log('✓ Created .claude/commands/ directory', colors.green);
   log('✓ Created .claude/scripts/ directory', colors.green);
+  log('✓ Created .claude/skills/ directory', colors.green);
 
   // Handle monorepo setup
   if (monorepo.isMonorepo) {
@@ -522,6 +635,11 @@ function createSessionsDirectory() {
   writeFileSync('.claude/commands/change-git-strategy.md', changeGitStrategyContent);
   log('✓ Created .claude/commands/change-git-strategy.md', colors.green);
 
+  // Create skills
+  const sessionContextSkill = getTemplateContent('claude/skills/session-context/SKILL.md');
+  writeFileSync('.claude/skills/session-context/SKILL.md', sessionContextSkill);
+  log('✓ Created .claude/skills/session-context/SKILL.md', colors.green);
+
   // Create scripts
   const untrackScript = getTemplateContent('claude/scripts/untrack-sessions.sh');
   writeFileSync('.claude/scripts/untrack-sessions.sh', untrackScript);
@@ -541,23 +659,34 @@ function createSessionsDirectory() {
     chmodSync(hookPath, 0o755);
     log('✓ Created git post-merge hook for archive reminders', colors.green);
   }
+
+  // Write version file for future update tracking
+  const packageVersion = getPackageVersion();
+  writeInstalledVersion(packageVersion);
+  log(`✓ Created .sessions/.version (${packageVersion})`, colors.green);
 }
 
 async function main() {
-  log('\n✨ create-sessions-dir', colors.cyan + colors.bright);
+  log('\n[*] create-sessions-dir', colors.cyan + colors.bright);
   log('   Setting up Sessions Directory Pattern\n', colors.cyan);
 
   // Check for existing .sessions directory
   if (checkExistingSessions()) {
-    const version = detectVersion();
-    const isOlderVersion = version !== 'v0.3+';
+    const installedVersion = detectVersion();
+    const packageVersion = getPackageVersion();
+    const changes = getChangesFromVersion(installedVersion);
+    const hasChanges = changes.length > 0;
 
-    if (isOlderVersion) {
-      log('📦 Existing Sessions Directory detected (older version)', colors.cyan);
-      log('   Updating to v0.3.0 with new features...\n', colors.cyan);
+    if (installedVersion) {
+      log(`[i] Existing Sessions Directory detected (v${installedVersion})`, colors.cyan);
     } else {
-      log('📦 Existing Sessions Directory detected (v0.3+)', colors.cyan);
-      log('   Updating commands to latest templates...\n', colors.cyan);
+      log('[i] Existing Sessions Directory detected (legacy)', colors.cyan);
+    }
+
+    if (hasChanges) {
+      log(`   Updating to v${packageVersion}...\n`, colors.cyan);
+    } else {
+      log(`   Already at v${packageVersion}, refreshing templates...\n`, colors.cyan);
     }
 
     updateExistingSetup();
@@ -566,24 +695,20 @@ async function main() {
     const hasClaudeCLI = checkClaudeCLI();
 
     log('\n' + '─'.repeat(50), colors.blue);
-    log('\n🎉 Update complete!\n', colors.green + colors.bright);
+    log('\n[OK] Update complete!\n', colors.green + colors.bright);
 
-    if (isOlderVersion) {
-      log('What\'s new in v0.3.8:', colors.bright);
-      log('  • Git hook for archive reminders (post-merge)');
-      log('  • Ask mode for script permissions (better UX)');
-      log('  • GitHub integration via gh CLI (/start-session)');
-      log('  • Linear integration via MCP (/start-session)');
-      log('  • Implementation planning (/plan)');
-      log('  • Enhanced documentation with sub-agents (/document)');
-      log('  • Monorepo support (auto-detected)');
-      log('  • New directories: plans/, prep/\n');
+    if (hasChanges) {
+      log(`What's new since v${installedVersion || 'legacy'}:`, colors.bright);
+      for (const change of changes) {
+        log(`  - ${change}`);
+      }
+      log('');
     }
 
     if (!hasClaudeCLI) {
-      log('⚠️  Claude CLI not detected', colors.yellow);
-      log('   Install it to use slash commands:', colors.yellow);
-      log('   npm install -g @anthropic-ai/claude-code\n', colors.cyan);
+      log('[!] Claude CLI not detected', colors.yellow);
+      log('    Install it to use slash commands:', colors.yellow);
+      log('    npm install -g @anthropic-ai/claude-code\n', colors.cyan);
     }
 
     log('Next steps:', colors.bright);
@@ -613,12 +738,12 @@ async function main() {
   const hasClaudeCLI = checkClaudeCLI();
 
   log('\n' + '─'.repeat(50), colors.blue);
-  log('\n🎉 Sessions Directory created successfully!\n', colors.green + colors.bright);
+  log('\n[OK] Sessions Directory created successfully!\n', colors.green + colors.bright);
 
   if (!hasClaudeCLI) {
-    log('⚠️  Claude CLI not detected', colors.yellow);
-    log('   Install it to use slash commands:', colors.yellow);
-    log('   npm install -g @anthropic-ai/claude-code\n', colors.cyan);
+    log('[!] Claude CLI not detected', colors.yellow);
+    log('    Install it to use slash commands:', colors.yellow);
+    log('    npm install -g @anthropic-ai/claude-code\n', colors.cyan);
   }
 
   log('Next steps:', colors.bright);
