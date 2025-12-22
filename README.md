@@ -51,6 +51,8 @@ Then start your first session:
     archive-session.md  # /archive-session command
   scripts/
     untrack-sessions.sh # Git strategy helper
+  skills/
+    session-context/    # Auto-reads context when relevant
 ```
 
 ## Usage
@@ -92,6 +94,20 @@ Claude moves finished work to the archive to keep your context file clean.
 /change-git-strategy
 ```
 Change how .sessions/ is handled in git (hybrid, commit all, or ignore all). Useful if you want to share more/less with your team.
+
+## Skills (Passive Context)
+
+In addition to slash commands (user-invoked), this package installs **skills** that Claude uses automatically when relevant.
+
+### Session Context Skill
+
+Claude automatically reads `.sessions/index.md` when you ask about:
+- "What's the project status?"
+- "What were we working on?"
+- "What decisions have we made?"
+- "What's blocking us?"
+
+No need to run `/start-session` for quick context questions - Claude just knows.
 
 ## Requirements
 

@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.9] - 2025-12-22
+
+### Added
+- **Session context skill**: Claude auto-reads `.sessions/index.md` when you ask about project context, previous sessions, decisions, or blockers - no need to run `/start-session` for quick questions
+- **Version tracking**: `.sessions/.version` file tracks installed version for proper incremental updates
+- **Incremental changelog**: Updates now show only what's new since your installed version (e.g., "What's new since v0.3.8")
+- **Skills directory**: `.claude/skills/session-context/` installed automatically
+
+### Changed
+- Replaced emoji indicators with text alternatives ([OK], [!], [i], [*]) for better terminal compatibility
+- Improved update messaging with version-aware output
+
 ## [0.3.8] - 2025-12-11
 
 ### Changed
@@ -142,6 +154,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Color-coded terminal output
 - Project name detection (package.json, git remote, directory)
 
+[0.3.9]: https://github.com/vieko/create-sessions-dir/compare/v0.3.8...v0.3.9
+[0.3.8]: https://github.com/vieko/create-sessions-dir/compare/v0.3.7...v0.3.8
 [0.3.7]: https://github.com/vieko/create-sessions-dir/compare/v0.3.6...v0.3.7
 [0.3.6]: https://github.com/vieko/create-sessions-dir/compare/v0.3.5...v0.3.6
 [0.3.5]: https://github.com/vieko/create-sessions-dir/compare/v0.3.4...v0.3.5
