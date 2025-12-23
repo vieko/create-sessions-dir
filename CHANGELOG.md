@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.10] - 2025-12-22
+
+### Added
+- **Archive-session skill**: Claude suggests archiving after PR merges or when work is completed
+  - Triggers on: "merge it", "merge the PR", "shipped", "done with X", "merged to main"
+  - Suggests running `/archive-session` - doesn't archive automatically
+  - Works when you ask Claude to merge PRs (detects successful `gh pr merge`)
+
+### Removed
+- **Git post-merge hook**: Replaced by archive-session skill (more elegant, works without local git operations)
+  - Existing hooks are automatically cleaned up during update
+
 ## [0.3.9] - 2025-12-22
 
 ### Added
@@ -154,6 +166,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Color-coded terminal output
 - Project name detection (package.json, git remote, directory)
 
+[0.3.10]: https://github.com/vieko/create-sessions-dir/compare/v0.3.9...v0.3.10
 [0.3.9]: https://github.com/vieko/create-sessions-dir/compare/v0.3.8...v0.3.9
 [0.3.8]: https://github.com/vieko/create-sessions-dir/compare/v0.3.7...v0.3.8
 [0.3.7]: https://github.com/vieko/create-sessions-dir/compare/v0.3.6...v0.3.7

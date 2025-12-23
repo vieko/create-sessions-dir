@@ -72,6 +72,13 @@ interface ChangelogEntry {
 
 const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.3.10',
+    changes: [
+      'Archive-session skill (Claude suggests archiving after PR merges)',
+      'Removed git hook (skills are more elegant)',
+    ]
+  },
+  {
     version: '0.3.9',
     changes: [
       'Session context skill (Claude auto-reads .sessions/index.md)',
@@ -87,7 +94,6 @@ const CHANGELOG: ChangelogEntry[] = [
   {
     version: '0.3.5',
     changes: [
-      'Git hook for archive reminders (post-merge)',
       'Ask mode for script permissions (better UX)',
       'Permission system overhaul',
     ]
@@ -133,10 +139,10 @@ function detectVersion(): string | null {
   const hasPlanCommand = existsSync('.claude/commands/plan.md');
   const hasHybridGitignore = existsSync('.sessions/.gitignore') &&
     readFileSync('.sessions/.gitignore', 'utf-8').includes('!docs/');
-  const hasGitHook = existsSync('.git/hooks/post-merge');
+  const hasSessionContextSkill = existsSync('.claude/skills/session-context/SKILL.md');
 
   // Estimate version based on features present
-  if (hasGitHook) return '0.3.5'; // Git hooks added in 0.3.5
+  if (hasSessionContextSkill) return '0.3.9'; // Skills added in 0.3.9
   if (hasPlanCommand || hasHybridGitignore) return '0.3.0';
 
   return '0.1.0'; // Very old version
@@ -359,6 +365,13 @@ function updateExistingSetup() {
   writeFileSync('.claude/skills/session-context/SKILL.md', sessionContextSkill);
   log('✓ Updated .claude/skills/session-context/SKILL.md', colors.green);
 
+  if (!existsSync('.claude/skills/archive-session')) {
+    mkdirSync('.claude/skills/archive-session', { recursive: true });
+  }
+  const archiveSessionSkill = getTemplateContent('claude/skills/archive-session/SKILL.md');
+  writeFileSync('.claude/skills/archive-session/SKILL.md', archiveSessionSkill);
+  log('✓ Updated .claude/skills/archive-session/SKILL.md', colors.green);
+
   // Always create or update settings.json for permissions
   if (!existsSync('.claude/settings.json')) {
     const settingsContent = getTemplateContent('claude/settings.json');
@@ -428,19 +441,20 @@ function updateExistingSetup() {
     }
   }
 
-  // Remove deprecated should-archive.sh script (replaced by git hook in v0.3.5)
+  // Remove deprecated should-archive.sh script (replaced by archive-session skill)
   if (existsSync('.claude/scripts/should-archive.sh')) {
     unlinkSync('.claude/scripts/should-archive.sh');
     log('✓ Removed deprecated should-archive.sh script', colors.yellow);
   }
 
-  // Set up git post-merge hook for archive reminders (always check, even for v0.3+ users)
-  if (existsSync('.git/hooks') && !existsSync('.git/hooks/post-merge')) {
-    const hookPath = '.git/hooks/post-merge';
-    const hookContent = getTemplateContent('git/hooks/post-merge');
-    writeFileSync(hookPath, hookContent);
-    chmodSync(hookPath, 0o755);
-    log('✓ Created git post-merge hook for archive reminders', colors.green);
+  // Remove deprecated post-merge hook (replaced by archive-session skill in v0.3.10)
+  if (existsSync('.git/hooks/post-merge')) {
+    const hookContent = readFileSync('.git/hooks/post-merge', 'utf-8');
+    // Only remove if it's our hook (check for sessions pattern markers)
+    if (hookContent.includes('.sessions') || hookContent.includes('archive')) {
+      unlinkSync('.git/hooks/post-merge');
+      log('✓ Removed deprecated post-merge hook (replaced by archive-session skill)', colors.yellow);
+    }
   }
 
   // Write version file for future update tracking
@@ -576,6 +590,7 @@ function createSessionsDirectory() {
   mkdirSync('.claude/commands', { recursive: true });
   mkdirSync('.claude/scripts', { recursive: true });
   mkdirSync('.claude/skills/session-context', { recursive: true });
+  mkdirSync('.claude/skills/archive-session', { recursive: true });
 
   log('\n✓ Created .sessions/ directory', colors.green);
   log('✓ Created .sessions/archive/ directory', colors.green);
@@ -640,6 +655,10 @@ function createSessionsDirectory() {
   writeFileSync('.claude/skills/session-context/SKILL.md', sessionContextSkill);
   log('✓ Created .claude/skills/session-context/SKILL.md', colors.green);
 
+  const archiveSessionSkill = getTemplateContent('claude/skills/archive-session/SKILL.md');
+  writeFileSync('.claude/skills/archive-session/SKILL.md', archiveSessionSkill);
+  log('✓ Created .claude/skills/archive-session/SKILL.md', colors.green);
+
   // Create scripts
   const untrackScript = getTemplateContent('claude/scripts/untrack-sessions.sh');
   writeFileSync('.claude/scripts/untrack-sessions.sh', untrackScript);
@@ -650,15 +669,6 @@ function createSessionsDirectory() {
   const settingsContent = getTemplateContent('claude/settings.json');
   writeFileSync('.claude/settings.json', settingsContent);
   log('✓ Created .claude/settings.json', colors.green);
-
-  // Set up git post-merge hook for archive reminders
-  if (existsSync('.git/hooks')) {
-    const hookPath = '.git/hooks/post-merge';
-    const hookContent = getTemplateContent('git/hooks/post-merge');
-    writeFileSync(hookPath, hookContent);
-    chmodSync(hookPath, 0o755);
-    log('✓ Created git post-merge hook for archive reminders', colors.green);
-  }
 
   // Write version file for future update tracking
   const packageVersion = getPackageVersion();

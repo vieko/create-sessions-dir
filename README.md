@@ -53,6 +53,7 @@ Then start your first session:
     untrack-sessions.sh # Git strategy helper
   skills/
     session-context/    # Auto-reads context when relevant
+    archive-session/    # Suggests archiving after PR merges
 ```
 
 ## Usage
@@ -87,7 +88,7 @@ Claude launches an exploration agent to understand the topic, then creates docum
 ```
 Claude moves finished work to the archive to keep your context file clean.
 
-**Automatic Prompts**: After merging to main, a git hook automatically prompts whether to archive completed sessions - archiving happens at the right moment without manual tracking.
+**Automatic Suggestions**: After merging PRs or when you mention completion ("shipped", "done with X"), the archive-session skill prompts whether to archive - no manual tracking needed.
 
 ### Change Git Strategy
 ```
@@ -108,6 +109,15 @@ Claude automatically reads `.sessions/index.md` when you ask about:
 - "What's blocking us?"
 
 No need to run `/start-session` for quick context questions - Claude just knows.
+
+### Archive Session Skill
+
+Claude suggests archiving when:
+- You ask to merge a PR: "merge it", "merge the PR", "ship it"
+- After successfully running `gh pr merge`
+- You mention completion: "PR merged", "shipped", "done with X"
+
+Claude suggests but doesn't archive automatically - you stay in control.
 
 ## Requirements
 

@@ -39,10 +39,10 @@ Single-file CLI tool that:
    - `.sessions/prep/` - Pre-session context (new)
    - `.sessions/packages/` - Package-specific notes (monorepos only)
    - `.claude/commands/` - Slash commands for Claude Code
-   - `.claude/scripts/` - Bash scripts for automation (new)
-   - `.git/hooks/post-merge` - Archive reminder hook (new in v0.3.5)
+   - `.claude/scripts/` - Bash scripts for automation
+   - `.claude/skills/` - Model-invoked skills for passive awareness
 4. **Populates templates** - Copies and customizes template files with project-specific data
-5. **Sets executable permissions** - Makes scripts and git hooks executable
+5. **Sets executable permissions** - Makes scripts executable
 6. **Detects project context** - Infers project name from package.json → git remote → directory name
 7. **Checks for Claude CLI** - Provides installation instructions if not found
 
@@ -64,8 +64,9 @@ Templates live in `templates/` and are copied to target project:
 **Claude scripts** (`templates/claude/scripts/`):
 - `untrack-sessions.sh` - Helper script for changing git strategies
 
-**Git hooks** (`templates/git/hooks/`):
-- `post-merge` - Prompts to archive sessions after merging to main (v0.3.5+)
+**Claude skills** (`templates/claude/skills/`):
+- `session-context/SKILL.md` - Auto-reads context when user asks about project status
+- `archive-session/SKILL.md` - Suggests archiving after PR merges
 
 ### Template Variable Substitution
 
@@ -112,9 +113,10 @@ Uses ANSI color codes for CLI feedback:
 - If present → Detected as v0.3+ (current or newer)
 
 **Update behavior**:
-- Creates missing directories (plans/, prep/, scripts/, packages/ if monorepo)
+- Creates missing directories (plans/, prep/, scripts/, skills/, packages/ if monorepo)
 - Updates slash commands to latest versions (overwrites .claude/commands/*.md)
-- Installs git hook for archive reminders (post-merge)
+- Updates skills to latest versions (overwrites .claude/skills/*.md)
+- Removes deprecated files (old git hooks, scripts)
 - **Preserves** all user content in .sessions/index.md, archive/, and docs/
 - Shows changelog of new features
 - Idempotent: Running again on updated setup exits gracefully
@@ -149,33 +151,27 @@ This file follows strict context engineering principles:
 
 ## Important Patterns
 
-### Git Hook Integration Pattern
+### Skills Pattern
 
-**New in v0.3.5**: Git hooks prompt for archival at the right moment.
+**New in v0.3.9+**: Model-invoked skills provide passive awareness without user action.
 
-**Example**: `post-merge` hook after merging to main
-```bash
-# .git/hooks/post-merge
-# Prompts to archive sessions after merging to main
+**Skills vs Commands**:
+- **Skills** (model-invoked): Claude triggers automatically based on context
+- **Commands** (user-invoked): User explicitly runs `/command`
 
-current_branch=$(git branch --show-current)
-if [ "$current_branch" = "main" ]; then
-  echo "Archive completed session work? [y/N]"
-  # Prompts user interactively
-fi
-```
+**Current skills**:
+- `session-context` - Reads `.sessions/index.md` when user asks about project status
+- `archive-session` - Suggests archiving after PR merges or completion
+
+**Example**: Archive-session skill triggers when:
+- User asks to merge: "merge it", "merge the PR", "ship it"
+- After successful `gh pr merge`
+- User mentions completion: "PR merged", "shipped", "done with X"
 
 **Benefits**:
-- Triggers at the right time (after PR merge)
-- Interactive - user controls when to archive
-- Can't forget - hook reminds automatically
-- Team-friendly - works for everyone in repo
-
-**Hook setup**:
-- Installed automatically during scaffold (`.git/hooks/post-merge`)
-- Executable permissions set via `chmodSync`
-- Only runs on main/master branch
-- Gracefully skips if `.sessions/` doesn't exist
+- No user action required - Claude is contextually aware
+- Works for remote operations (GitHub UI merges)
+- Suggests but doesn't act - user stays in control
 
 ### Sub-Agent Pattern
 
