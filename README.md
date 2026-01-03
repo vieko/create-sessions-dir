@@ -1,5 +1,14 @@
 # create-sessions-dir
 
+> **This package is archived.** Use the [Sessions plugin](https://github.com/vieko/sessions) instead:
+> ```bash
+> claude plugin marketplace add vieko/sessions
+> claude plugin install sessions@vieko
+> ```
+> The plugin offers the same workflow with subagents, specs, reviews, and native Claude Code integration.
+
+---
+
 Scaffold a Sessions Directory for working with AI coding agents.
 
 ## What is this?
